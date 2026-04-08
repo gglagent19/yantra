@@ -10,6 +10,7 @@ import {
   SquarePen,
   Network,
   Boxes,
+  Plug,
   Repeat,
   Settings,
   ShieldCheck,
@@ -126,6 +127,7 @@ export function Sidebar() {
         <SidebarAgents />
 
         <SidebarSection label="System">
+          <SidebarNavItem to="/integrations" label="Integrations" icon={Plug} />
           <SidebarNavItem to="/skills" label="Skills" icon={Boxes} />
           <SidebarNavItem to="/costs" label="Costs" icon={DollarSign} />
           <SidebarNavItem to="/activity" label="Activity" icon={History} />

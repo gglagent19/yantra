@@ -521,8 +521,6 @@ export function Dashboard() {
 
       <AnthropicApiKeyCard companyId={selectedCompanyId!} />
 
-      <IntegrationsPanel />
-
       <ActiveAgentsPanel companyId={selectedCompanyId!} />
 
       {data && (
