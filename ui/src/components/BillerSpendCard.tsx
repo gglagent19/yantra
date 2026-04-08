@@ -72,7 +72,7 @@ export function BillerSpendCard({
             </CardDescription>
           </div>
           <span className="text-xl font-bold tabular-nums shrink-0">
-            {formatCents(row.costCents)}
+            {formatTokens(row.inputTokens + row.cachedInputTokens + row.outputTokens)} tokens
           </span>
         </div>
       </CardHeader>
@@ -80,9 +80,9 @@ export function BillerSpendCard({
       <CardContent className="px-4 pb-4 pt-3 space-y-4">
         {budgetMonthlyCents > 0 && (
           <QuotaBar
-            label="Period spend"
+            label="Period usage"
             percentUsed={budgetPct}
-            leftLabel={formatCents(row.costCents)}
+            leftLabel={`${formatTokens(row.inputTokens + row.outputTokens)} tokens`}
             rightLabel={`${Math.round(budgetPct)}% of allocation`}
           />
         )}
@@ -93,8 +93,6 @@ export function BillerSpendCard({
           {row.subscriptionRunCount > 0
             ? `${row.subscriptionRunCount} subscription run${row.subscriptionRunCount === 1 ? "" : "s"}`
             : "0 subscription runs"}
-          {" · "}
-          {formatCents(weekSpendCents)} this week
         </div>
 
         {billingTypeBreakdown.length > 0 && (
@@ -105,10 +103,9 @@ export function BillerSpendCard({
                 Billing types
               </p>
               <div className="space-y-1.5">
-                {billingTypeBreakdown.map(([billingType, costCents]) => (
+                {billingTypeBreakdown.map(([billingType]) => (
                   <div key={billingType} className="flex items-center justify-between gap-2 text-xs">
                     <span className="text-muted-foreground">{billingTypeDisplayName(billingType as any)}</span>
-                    <span className="font-medium tabular-nums">{formatCents(costCents)}</span>
                   </div>
                 ))}
               </div>
@@ -128,10 +125,7 @@ export function BillerSpendCard({
                   <div key={entry.provider} className="flex items-center justify-between gap-2 text-xs">
                     <span className="text-muted-foreground">{providerDisplayName(entry.provider)}</span>
                     <div className="text-right tabular-nums">
-                      <div className="font-medium">{formatCents(entry.costCents)}</div>
-                      <div className="text-muted-foreground">
-                        {formatTokens(entry.inputTokens + entry.outputTokens)} tok
-                      </div>
+                      <div className="font-medium">{formatTokens(entry.inputTokens + entry.outputTokens)} tokens</div>
                     </div>
                   </div>
                 ))}

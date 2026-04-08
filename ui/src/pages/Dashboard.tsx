@@ -20,8 +20,8 @@ import { StatusIcon } from "../components/StatusIcon";
 import { ActivityRow } from "../components/ActivityRow";
 import { Identity } from "../components/Identity";
 import { timeAgo } from "../lib/timeAgo";
-import { cn, formatCents } from "../lib/utils";
-import { Bot, CircleDot, DollarSign, ShieldCheck, LayoutDashboard, PauseCircle, Key, Eye, EyeOff, Check, Loader2 } from "lucide-react";
+import { cn, formatCents, formatTokens } from "../lib/utils";
+import { Bot, CircleDot, Cpu, ShieldCheck, LayoutDashboard, PauseCircle, Key, Eye, EyeOff, Check, Loader2 } from "lucide-react";
 import { ActiveAgentsPanel } from "../components/ActiveAgentsPanel";
 import { ChartCard, RunActivityChart, PriorityChart, IssueStatusChart, SuccessRateChart } from "../components/ActivityCharts";
 import { PageSkeleton } from "../components/PageSkeleton";
@@ -400,16 +400,14 @@ export function Dashboard() {
               }
             />
             <MetricCard
-              icon={DollarSign}
-              value={formatCents(data.costs.monthSpendCents)}
-              label="Month Spend"
+              icon={Cpu}
+              value={formatTokens(data.costs.todayTotalTokens ?? 0)}
+              label="Tokens Today"
               to="/costs"
               accentIndex={2}
               description={
                 <span>
-                  {data.costs.monthBudgetCents > 0
-                    ? `${data.costs.monthUtilizationPercent}% of ${formatCents(data.costs.monthBudgetCents)} budget`
-                    : "Unlimited budget"}
+                  {formatTokens(data.costs.todayInputTokens ?? 0)} in / {formatTokens(data.costs.todayOutputTokens ?? 0)} out
                 </span>
               }
             />

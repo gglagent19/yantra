@@ -1362,8 +1362,8 @@ function CostsSection({
               <span className="text-lg font-semibold">{formatTokens(runtimeState.totalCachedInputTokens)}</span>
             </div>
             <div>
-              <span className="text-xs text-muted-foreground block">Total cost</span>
-              <span className="text-lg font-semibold">{formatCents(runtimeState.totalCostCents)}</span>
+              <span className="text-xs text-muted-foreground block">Total tokens</span>
+              <span className="text-lg font-semibold">{formatTokens(runtimeState.totalInputTokens + runtimeState.totalOutputTokens)}</span>
             </div>
           </div>
         </div>
@@ -1377,7 +1377,7 @@ function CostsSection({
                 <th className="text-left px-3 py-2 font-medium text-muted-foreground">Run</th>
                 <th className="text-right px-3 py-2 font-medium text-muted-foreground">Input</th>
                 <th className="text-right px-3 py-2 font-medium text-muted-foreground">Output</th>
-                <th className="text-right px-3 py-2 font-medium text-muted-foreground">Cost</th>
+                <th className="text-right px-3 py-2 font-medium text-muted-foreground">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -1390,8 +1390,8 @@ function CostsSection({
                     <td className="px-3 py-2 text-right tabular-nums">{formatTokens(metrics.input)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatTokens(metrics.output)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">
-                      {metrics.cost > 0
-                        ? `$${metrics.cost.toFixed(4)}`
+                      {metrics.input + metrics.output > 0
+                        ? formatTokens(metrics.input + metrics.output)
                         : "-"
                       }
                     </td>

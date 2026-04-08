@@ -524,7 +524,7 @@ export function normalizeTranscript(entries: TranscriptEntry[], streaming: boole
         text: entry.text.trim() || entry.errors[0] || (entry.isError ? "Run failed" : "Completed"),
         detail:
           !entry.isError && entry.text.trim().length > 0
-            ? `${formatTokens(entry.inputTokens)} / ${formatTokens(entry.outputTokens)} / $${entry.costUsd.toFixed(6)}`
+            ? `${formatTokens(entry.inputTokens)} in / ${formatTokens(entry.outputTokens)} out`
             : undefined,
       });
       continue;

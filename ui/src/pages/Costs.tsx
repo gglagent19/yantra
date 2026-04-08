@@ -46,24 +46,20 @@ function currentWeekRange(): { from: string; to: string } {
 
 function ProviderTabLabel({ provider, rows }: { provider: string; rows: CostByProviderModel[] }) {
   const totalTokens = rows.reduce((sum, row) => sum + row.inputTokens + row.cachedInputTokens + row.outputTokens, 0);
-  const totalCost = rows.reduce((sum, row) => sum + row.costCents, 0);
   return (
     <span className="flex items-center gap-1.5">
       <span>{providerDisplayName(provider)}</span>
-      <span className="font-mono text-xs text-muted-foreground">{formatTokens(totalTokens)}</span>
-      <span className="text-xs text-muted-foreground">{formatCents(totalCost)}</span>
+      <span className="font-mono text-xs text-muted-foreground">{formatTokens(totalTokens)} tokens</span>
     </span>
   );
 }
 
 function BillerTabLabel({ biller, rows }: { biller: string; rows: CostByBiller[] }) {
   const totalTokens = rows.reduce((sum, row) => sum + row.inputTokens + row.cachedInputTokens + row.outputTokens, 0);
-  const totalCost = rows.reduce((sum, row) => sum + row.costCents, 0);
   return (
     <span className="flex items-center gap-1.5">
       <span>{providerDisplayName(biller)}</span>
-      <span className="font-mono text-xs text-muted-foreground">{formatTokens(totalTokens)}</span>
-      <span className="text-xs text-muted-foreground">{formatCents(totalCost)}</span>
+      <span className="font-mono text-xs text-muted-foreground">{formatTokens(totalTokens)} tokens</span>
     </span>
   );
 }

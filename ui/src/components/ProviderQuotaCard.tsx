@@ -153,7 +153,7 @@ export function ProviderQuotaCard({
             </CardDescription>
           </div>
           <span className="text-xl font-bold tabular-nums shrink-0">
-            {formatCents(totalCostCents)}
+            {formatTokens(totalInputTokens + totalOutputTokens)} tokens
           </span>
         </div>
       </CardHeader>
@@ -162,17 +162,17 @@ export function ProviderQuotaCard({
         {hasBudget && (
           <div className="space-y-3">
             <QuotaBar
-              label="Period spend"
+              label="Period usage"
               percentUsed={budgetPct}
-              leftLabel={formatCents(totalCostCents)}
+              leftLabel={`${formatTokens(totalInputTokens + totalOutputTokens)} tokens`}
               rightLabel={`${Math.round(budgetPct)}% of allocation`}
               showDeficitNotch={showDeficitNotch}
             />
             <QuotaBar
               label="This week"
               percentUsed={weekPct}
-              leftLabel={formatCents(weekSpendCents)}
-              rightLabel={`~${formatCents(Math.round(weeklyBudgetShare))} / wk`}
+              leftLabel={`${formatTokens(totalInputTokens + totalOutputTokens)} tokens`}
+              rightLabel={`${Math.round(weekPct)}% of weekly avg`}
               showDeficitNotch={weekPct >= 100}
             />
           </div>
@@ -191,9 +191,8 @@ export function ProviderQuotaCard({
                   const row = windowMap.get(w);
                   // omit windows with no data rather than showing false $0.00 zeros
                   if (!row) return null;
-                  const cents = row.costCents;
                   const tokens = row.inputTokens + row.outputTokens;
-                  const barPct = maxWindowCents > 0 ? (cents / maxWindowCents) * 100 : 0;
+                  const barPct = maxWindowCents > 0 ? (row.costCents / maxWindowCents) * 100 : 0;
                   return (
                     <div key={w} className="space-y-1">
                       <div className="flex items-center justify-between gap-2 text-xs">
@@ -201,7 +200,7 @@ export function ProviderQuotaCard({
                         <span className="text-muted-foreground font-mono flex-1">
                           {formatTokens(tokens)} tok
                         </span>
-                        <span className="font-medium tabular-nums">{formatCents(cents)}</span>
+                        <span className="font-medium tabular-nums">{formatTokens(tokens)} tokens</span>
                       </div>
                       <div className="h-2 w-full border border-border overflow-hidden">
                         <div
@@ -280,7 +279,7 @@ export function ProviderQuotaCard({
                         <span className="text-muted-foreground">
                           {formatTokens(rowTokens)} tok
                         </span>
-                        <span className="font-medium">{formatCents(row.costCents)}</span>
+                        <span className="font-medium">{Math.round(tokenPct)}%</span>
                       </div>
                     </div>
                     {/* token share bar */}
