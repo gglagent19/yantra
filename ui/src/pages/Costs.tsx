@@ -114,27 +114,27 @@ function FinanceSummaryCard({
       </CardHeader>
       <CardContent className="grid gap-3 px-5 pb-5 pt-2 sm:grid-cols-2 xl:grid-cols-4">
         <MetricTile
-          label="Debits"
-          value={formatCents(debitCents)}
-          subtitle={`${eventCount} total event${eventCount === 1 ? "" : "s"} in range`}
+          label="Events"
+          value={String(eventCount)}
+          subtitle={`Total event${eventCount === 1 ? "" : "s"} in range`}
           icon={ArrowUpRight}
         />
         <MetricTile
           label="Credits"
-          value={formatCents(creditCents)}
+          value={String(eventCount)}
           subtitle="Refunds, offsets, and credit returns"
           icon={ArrowDownLeft}
         />
         <MetricTile
           label="Net"
-          value={formatCents(netCents)}
-          subtitle="Debit minus credit for the selected period"
+          value={String(eventCount)}
+          subtitle="Events tracked for the selected period"
           icon={ReceiptText}
         />
         <MetricTile
           label="Estimated"
-          value={formatCents(estimatedDebitCents)}
-          subtitle="Estimated debits that are not yet invoice-authoritative"
+          value={String(eventCount)}
+          subtitle="Pending events not yet finalized"
           icon={Coins}
         />
       </CardContent>
@@ -577,9 +577,9 @@ export function Costs() {
 
           <div className="grid gap-3 lg:grid-cols-4">
             <MetricTile
-              label="Inference spend"
-              value={formatCents(spendData?.summary.spendCents ?? 0)}
-              subtitle={`${formatTokens(inferenceTokenTotal)} tokens across request-scoped events`}
+              label="Token usage"
+              value={formatTokens(inferenceTokenTotal)}
+              subtitle={`Tokens across request-scoped events`}
               icon={DollarSign}
             />
             <MetricTile
@@ -593,21 +593,21 @@ export function Costs() {
                 activeBudgetIncidents.length > 0
                   ? `${budgetData?.pausedAgentCount ?? 0} agents paused · ${budgetData?.pausedProjectCount ?? 0} projects paused`
                   : spendData?.summary.budgetCents && spendData.summary.budgetCents > 0
-                    ? `${formatCents(spendData.summary.spendCents)} of ${formatCents(spendData.summary.budgetCents)}`
+                    ? `${formatTokens(inferenceTokenTotal)} tokens used`
                     : "No monthly cap configured"
               }
               icon={Coins}
             />
             <MetricTile
               label="Finance net"
-              value={formatCents(financeData?.summary.netCents ?? 0)}
-              subtitle={`${formatCents(financeData?.summary.debitCents ?? 0)} debits · ${formatCents(financeData?.summary.creditCents ?? 0)} credits`}
+              value={String(financeData?.summary.eventCount ?? 0)}
+              subtitle={`${financeData?.summary.eventCount ?? 0} events in range`}
               icon={ReceiptText}
             />
             <MetricTile
               label="Finance events"
               value={String(financeData?.summary.eventCount ?? 0)}
-              subtitle={`${formatCents(financeData?.summary.estimatedDebitCents ?? 0)} estimated in range`}
+              subtitle={`Events tracked in range`}
               icon={ArrowUpRight}
             />
           </div>
@@ -655,18 +655,18 @@ export function Costs() {
                   <CardHeader className="px-5 pt-5 pb-2">
                     <CardTitle className="text-base">Inference ledger</CardTitle>
                     <CardDescription>
-                      Request-scoped inference spend for the selected period.
+                      Request-scoped token usage for the selected period.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4 px-5 pb-5 pt-2">
                     <div className="flex flex-wrap items-end justify-between gap-3">
                       <div>
                         <div className="text-3xl font-semibold tabular-nums">
-                          {formatCents(spendData?.summary.spendCents ?? 0)}
+                          {formatTokens(inferenceTokenTotal)} tokens
                         </div>
                         <div className="mt-1 text-sm text-muted-foreground">
                           {spendData?.summary.budgetCents && spendData.summary.budgetCents > 0
-                            ? `Budget ${formatCents(spendData.summary.budgetCents)}`
+                            ? "Budget configured"
                             : "Unlimited budget"}
                         </div>
                       </div>
