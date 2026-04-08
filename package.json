@@ -8,6 +8,7 @@
     "dev:once": "pnpm --filter @yantra/server exec tsx ../scripts/dev-runner.ts dev",
     "dev:list": "pnpm --filter @yantra/server exec tsx ../scripts/dev-service.ts list",
     "dev:stop": "pnpm --filter @yantra/server exec tsx ../scripts/dev-service.ts stop",
+    "postinstall": "pnpm --filter @yantra/shared build && pnpm --filter @yantra/plugin-sdk build",
     "dev:server": "pnpm --filter @yantra/server dev",
     "dev:ui": "pnpm --filter @yantra/ui dev",
     "build": "pnpm -r build",
