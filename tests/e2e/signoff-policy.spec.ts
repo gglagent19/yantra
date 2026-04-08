@@ -21,7 +21,7 @@ import { test, expect, request as pwRequest, type APIRequestContext } from "@pla
  *     the in_review state the signoff policy requires).
  */
 
-const PORT = Number(process.env.PAPERCLIP_E2E_PORT ?? 3199);
+const PORT = Number(process.env.YANTRA_E2E_PORT ?? 3199);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const COMPANY_NAME = `E2E-Signoff-${Date.now()}`;
 
@@ -67,7 +67,7 @@ async function agentPatch(
 ) {
   const runId = await invokeHeartbeat(board, agent.agentId);
   const res = await agent.request.patch(`${BASE_URL}/api/issues/${issueId}`, {
-    headers: { "X-Paperclip-Run-Id": runId },
+    headers: { "X-Yantra-Run-Id": runId },
     data,
   });
   return res;
@@ -84,7 +84,7 @@ async function agentCheckoutAndPatch(
   const runId = await invokeHeartbeat(board, agent.agentId);
   // Checkout (sets executionRunId so PATCH is allowed)
   const checkoutRes = await agent.request.post(`${BASE_URL}/api/issues/${issueId}/checkout`, {
-    headers: { "X-Paperclip-Run-Id": runId },
+    headers: { "X-Yantra-Run-Id": runId },
     data: { agentId: agent.agentId, expectedStatuses },
   });
   if (!checkoutRes.ok()) {
@@ -104,7 +104,7 @@ async function agentCheckoutAndPatch(
   }
   // PATCH with agent identity
   const res = await agent.request.patch(`${BASE_URL}/api/issues/${issueId}`, {
-    headers: { "X-Paperclip-Run-Id": runId },
+    headers: { "X-Yantra-Run-Id": runId },
     data: patchData,
   });
   return res;
@@ -119,7 +119,7 @@ async function setupCompany(boardRequest: APIRequestContext): Promise<TestContex
     throw new Error(
       `Signoff e2e tests require local_trusted deployment mode, ` +
         `but server is in "${health.deploymentMode}" mode. ` +
-        `Set PAPERCLIP_DEPLOYMENT_MODE=local_trusted or use the webServer config.`,
+        `Set YANTRA_DEPLOYMENT_MODE=local_trusted or use the webServer config.`,
     );
   }
 

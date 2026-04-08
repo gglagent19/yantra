@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link } from "@/lib/router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { dashboardApi } from "../api/dashboard";
 import { activityApi } from "../api/activity";
 import { issuesApi } from "../api/issues";
 import { agentsApi } from "../api/agents";
 import { projectsApi } from "../api/projects";
 import { heartbeatsApi } from "../api/heartbeats";
+import { secretsApi } from "../api/secrets";
 import { useCompany } from "../context/CompanyContext";
 import { useDialog } from "../context/DialogContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
+import { useToast } from "../context/ToastContext";
 import { queryKeys } from "../lib/queryKeys";
 import { MetricCard } from "../components/MetricCard";
 import { EmptyState } from "../components/EmptyState";
@@ -19,16 +21,154 @@ import { ActivityRow } from "../components/ActivityRow";
 import { Identity } from "../components/Identity";
 import { timeAgo } from "../lib/timeAgo";
 import { cn, formatCents } from "../lib/utils";
-import { Bot, CircleDot, DollarSign, ShieldCheck, LayoutDashboard, PauseCircle } from "lucide-react";
+import { Bot, CircleDot, DollarSign, ShieldCheck, LayoutDashboard, PauseCircle, Key, Eye, EyeOff, Check, Loader2 } from "lucide-react";
 import { ActiveAgentsPanel } from "../components/ActiveAgentsPanel";
 import { ChartCard, RunActivityChart, PriorityChart, IssueStatusChart, SuccessRateChart } from "../components/ActivityCharts";
 import { PageSkeleton } from "../components/PageSkeleton";
-import type { Agent, Issue } from "@paperclipai/shared";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import type { Agent, Issue } from "@yantra/shared";
 import { PluginSlotOutlet } from "@/plugins/slots";
 
 function getRecentIssues(issues: Issue[]): Issue[] {
   return [...issues]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+}
+
+const ANTHROPIC_SECRET_NAME = "ANTHROPIC_API_KEY";
+
+function AnthropicApiKeyCard({ companyId }: { companyId: string }) {
+  const queryClient = useQueryClient();
+  const { addToast } = useToast();
+  const [keyValue, setKeyValue] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const { data: secrets } = useQuery({
+    queryKey: queryKeys.secrets.list(companyId),
+    queryFn: () => secretsApi.list(companyId),
+  });
+
+  const existingSecret = secrets?.find((s) => s.name === ANTHROPIC_SECRET_NAME);
+
+  const createMutation = useMutation({
+    mutationFn: (value: string) =>
+      secretsApi.create(companyId, {
+        name: ANTHROPIC_SECRET_NAME,
+        value,
+        description: "Anthropic API key for Claude agents",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.secrets.list(companyId) });
+      setKeyValue("");
+      setIsEditing(false);
+      addToast({ title: "API key saved", variant: "default" });
+    },
+    onError: (err: Error) => {
+      addToast({ title: "Failed to save API key", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const rotateMutation = useMutation({
+    mutationFn: (value: string) => secretsApi.rotate(existingSecret!.id, { value }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.secrets.list(companyId) });
+      setKeyValue("");
+      setIsEditing(false);
+      addToast({ title: "API key updated", variant: "default" });
+    },
+    onError: (err: Error) => {
+      addToast({ title: "Failed to update API key", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const isSaving = createMutation.isPending || rotateMutation.isPending;
+
+  const handleSave = useCallback(() => {
+    const trimmed = keyValue.trim();
+    if (!trimmed) return;
+    if (existingSecret) {
+      rotateMutation.mutate(trimmed);
+    } else {
+      createMutation.mutate(trimmed);
+    }
+  }, [keyValue, existingSecret, createMutation, rotateMutation]);
+
+  return (
+    <div className="bg-card rounded-xl border border-border/10 shadow-sm p-6">
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+            <Key className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold font-headline text-foreground">Anthropic API Key</h3>
+            <p className="text-xs text-muted-foreground">
+              {existingSecret
+                ? `Configured · Last updated ${timeAgo(existingSecret.updatedAt)}`
+                : "Required for Claude agents to run"}
+            </p>
+          </div>
+        </div>
+        {existingSecret && !isEditing && (
+          <span className="flex items-center gap-1.5 text-xs font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2.5 py-1 rounded-full">
+            <Check className="h-3 w-3" />
+            Active
+          </span>
+        )}
+      </div>
+
+      {(!existingSecret || isEditing) ? (
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Input
+              type={showKey ? "text" : "password"}
+              placeholder="sk-ant-api03-..."
+              value={keyValue}
+              onChange={(e) => setKeyValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+              className="pr-10 font-mono text-xs"
+              autoComplete="off"
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey(!showKey)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+          <Button
+            onClick={handleSave}
+            disabled={!keyValue.trim() || isSaving}
+            className="shrink-0"
+            size="sm"
+          >
+            {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Key"}
+          </Button>
+          {isEditing && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setIsEditing(false); setKeyValue(""); }}
+              className="shrink-0"
+            >
+              Cancel
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center gap-3">
+          <div className="flex-1 bg-muted rounded-lg px-3 py-2 font-mono text-xs text-muted-foreground">
+            sk-ant-••••••••••••••••
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+            Update Key
+          </Button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function Dashboard() {
@@ -168,7 +308,7 @@ export function Dashboard() {
       return (
         <EmptyState
           icon={LayoutDashboard}
-          message="Welcome to Paperclip. Set up your first company and agent to get started."
+          message="Welcome to Yantra. Set up your first company and agent to get started."
           action="Get Started"
           onAction={openOnboarding}
         />
@@ -206,6 +346,8 @@ export function Dashboard() {
         </div>
       )}
 
+      <AnthropicApiKeyCard companyId={selectedCompanyId!} />
+
       <ActiveAgentsPanel companyId={selectedCompanyId!} />
 
       {data && (
@@ -229,12 +371,13 @@ export function Dashboard() {
             </div>
           ) : null}
 
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-1 sm:gap-2">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             <MetricCard
               icon={Bot}
               value={data.agents.active + data.agents.running + data.agents.paused + data.agents.error}
               label="Agents Enabled"
               to="/agents"
+              accentIndex={0}
               description={
                 <span>
                   {data.agents.running} running{", "}
@@ -248,6 +391,7 @@ export function Dashboard() {
               value={data.tasks.inProgress}
               label="Tasks In Progress"
               to="/issues"
+              accentIndex={1}
               description={
                 <span>
                   {data.tasks.open} open{", "}
@@ -260,6 +404,7 @@ export function Dashboard() {
               value={formatCents(data.costs.monthSpendCents)}
               label="Month Spend"
               to="/costs"
+              accentIndex={2}
               description={
                 <span>
                   {data.costs.monthBudgetCents > 0
@@ -273,6 +418,7 @@ export function Dashboard() {
               value={data.pendingApprovals + data.budgets.pendingApprovals}
               label="Pending Approvals"
               to="/approvals"
+              accentIndex={3}
               description={
                 <span>
                   {data.budgets.pendingApprovals > 0
@@ -283,7 +429,7 @@ export function Dashboard() {
             />
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ChartCard title="Run Activity" subtitle="Last 14 days">
               <RunActivityChart runs={runs ?? []} />
             </ChartCard>
@@ -305,14 +451,14 @@ export function Dashboard() {
             itemClassName="rounded-lg border bg-card p-4 shadow-sm"
           />
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-2 gap-6">
             {/* Recent Activity */}
             {recentActivity.length > 0 && (
               <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                <h3 className="text-sm font-bold font-headline text-foreground mb-4">
                   Recent Activity
                 </h3>
-                <div className="border border-border divide-y divide-border overflow-hidden">
+                <div className="bg-card border border-border/10 rounded-xl shadow-sm divide-y divide-border/10 overflow-hidden">
                   {recentActivity.map((event) => (
                     <ActivityRow
                       key={event.id}
@@ -329,15 +475,15 @@ export function Dashboard() {
 
             {/* Recent Tasks */}
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              <h3 className="text-sm font-bold font-headline text-foreground mb-4">
                 Recent Tasks
               </h3>
               {recentIssues.length === 0 ? (
-                <div className="border border-border p-4">
+                <div className="bg-card border border-border/10 rounded-xl shadow-sm p-4">
                   <p className="text-sm text-muted-foreground">No tasks yet.</p>
                 </div>
               ) : (
-                <div className="border border-border divide-y divide-border overflow-hidden">
+                <div className="bg-card border border-border/10 rounded-xl shadow-sm divide-y divide-border/10 overflow-hidden">
                   {recentIssues.slice(0, 10).map((issue) => (
                     <Link
                       key={issue.id}
@@ -345,14 +491,11 @@ export function Dashboard() {
                       className="px-4 py-3 text-sm cursor-pointer hover:bg-accent/50 transition-colors no-underline text-inherit block"
                     >
                       <div className="flex items-start gap-2 sm:items-center sm:gap-3">
-                        {/* Status icon - left column on mobile */}
                         <span className="shrink-0 sm:hidden">
                           <StatusIcon status={issue.status} />
                         </span>
-
-                        {/* Right column on mobile: title + metadata stacked */}
                         <span className="flex min-w-0 flex-1 flex-col gap-1 sm:contents">
-                          <span className="line-clamp-2 text-sm sm:order-2 sm:flex-1 sm:min-w-0 sm:line-clamp-none sm:truncate">
+                          <span className="line-clamp-2 text-sm text-foreground sm:order-2 sm:flex-1 sm:min-w-0 sm:line-clamp-none sm:truncate">
                             {issue.title}
                           </span>
                           <span className="flex items-center gap-2 sm:order-1 sm:shrink-0">

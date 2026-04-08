@@ -4,30 +4,31 @@ const CHARS = [" ", ".", "·", "▪", "▫", "○"] as const;
 const TARGET_FPS = 24;
 const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
 
-const PAPERCLIP_SPRITES = [
+const YANTRA_SPRITES = [
   [
-    "  ╭────╮ ",
-    " ╭╯╭──╮│ ",
-    " │ │  ││ ",
-    " │ │  ││ ",
-    " │ │  ││ ",
-    " │ │  ││ ",
-    " │ ╰──╯│ ",
-    " ╰─────╯ ",
+    "██    ██  █████  ███    ██ ████████ ██████   █████ ",
+    " ██  ██  ██   ██ ████   ██    ██    ██   ██ ██   ██",
+    "  ████   ███████ ██ ██  ██    ██    ██████  ███████",
+    "   ██    ██   ██ ██  ██ ██    ██    ██   ██ ██   ██",
+    "   ██    ██   ██ ██   ████    ██    ██   ██ ██   ██",
   ],
   [
-    " ╭─────╮ ",
-    " │╭──╮╰╮ ",
-    " ││  │ │ ",
-    " ││  │ │ ",
-    " ││  │ │ ",
-    " ││  │ │ ",
-    " │╰──╯ │ ",
-    " ╰────╯  ",
+    "▄▄    ▄▄  ▄▄▄▄▄  ▄▄▄    ▄▄ ▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄  ▄▄▄▄▄ ",
+    " ▀▄  ▄▀  ▐█   █▌ █▀█▄   █▌    █▌    █▌   █▌ █▌   █▌",
+    "  ▀▄▄▀   ▐█████▌ █▌ ▀█  █▌    █▌    █████▀  █████▀▌",
+    "   █▌    ▐█   █▌ █▌  ▀█ █▌    █▌    █▌  ▀█▄ █▌   █▌",
+    "   █▌    ▐█   █▌ █▌   ▀██▌    █▌    █▌   ▀█ █▌   █▌",
+  ],
+  [
+    "╔╗  ╔╗ ╔═══╗ ╔══╗  ╔╗╔══════╗╔════╗ ╔═══╗ ",
+    " ╚╗╔╝  ║╔═╗║ ║╔╗╚╗ ║║║  ╔╔  ║║╔══╝╗║╔═╗║",
+    "  ╚╝   ║╚═╝║ ║║ ╚╗║║║   ║║  ║║╚══╗║║╚═╝║",
+    "  ║║   ║╔═╗║ ║║  ╚╝║║   ║║   ║╔══╝║║╔═╗║",
+    "  ║║   ║║ ║║ ║║   ╚╝║   ║║   ║║  ╔╝║║ ║║",
   ],
 ] as const;
 
-type PaperclipSprite = (typeof PAPERCLIP_SPRITES)[number];
+type YantraSprite = (typeof YANTRA_SPRITES)[number];
 
 interface Clip {
   x: number;
@@ -37,7 +38,7 @@ interface Clip {
   life: number;
   maxLife: number;
   drift: number;
-  sprite: PaperclipSprite;
+  sprite: YantraSprite;
   width: number;
   height: number;
 }
@@ -53,7 +54,7 @@ function measureChar(container: HTMLElement): { w: number; h: number } {
   return { w: rect.width, h: rect.height };
 }
 
-function spriteSize(sprite: PaperclipSprite): { width: number; height: number } {
+function spriteSize(sprite: YantraSprite): { width: number; height: number } {
   let width = 0;
   for (const row of sprite) width = Math.max(width, row.length);
   return { width, height: sprite.length };
@@ -125,12 +126,12 @@ export function AsciiArtAnimation() {
         }
       }
 
-      const gapX = 18;
-      const gapY = 13;
-      for (let baseRow = 1; baseRow < rows - 9; baseRow += gapY) {
-        const startX = Math.floor(baseRow / gapY) % 2 === 0 ? 2 : 10;
-        for (let baseCol = startX; baseCol < cols - 10; baseCol += gapX) {
-          const sprite = PAPERCLIP_SPRITES[(baseCol + baseRow) % PAPERCLIP_SPRITES.length]!;
+      const gapX = 60;
+      const gapY = 10;
+      for (let baseRow = 1; baseRow < rows - 6; baseRow += gapY) {
+        const startX = Math.floor(baseRow / gapY) % 2 === 0 ? 2 : 30;
+        for (let baseCol = startX; baseCol < cols - 50; baseCol += gapX) {
+          const sprite = YANTRA_SPRITES[(baseCol + baseRow) % YANTRA_SPRITES.length]!;
           for (let sr = 0; sr < sprite.length; sr++) {
             const line = sprite[sr]!;
             for (let sc = 0; sc < line.length; sc++) {
@@ -151,7 +152,7 @@ export function AsciiArtAnimation() {
     }
 
     function spawnClip() {
-      const sprite = PAPERCLIP_SPRITES[Math.floor(Math.random() * PAPERCLIP_SPRITES.length)]!;
+      const sprite = YANTRA_SPRITES[Math.floor(Math.random() * YANTRA_SPRITES.length)]!;
       const size = spriteSize(sprite);
       const edge = Math.random();
       let x = 0;

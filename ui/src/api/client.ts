@@ -1,4 +1,24 @@
-const BASE = "/api";
+const LOCAL_SERVER_KEY = "yantra.serverUrl";
+
+function getBaseUrl(): string {
+  if (typeof window === "undefined") return "/api";
+  const stored = localStorage.getItem(LOCAL_SERVER_KEY);
+  if (stored) return `${stored}/api`;
+  return "/api";
+}
+
+export function getServerUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(LOCAL_SERVER_KEY);
+}
+
+export function setServerUrl(url: string) {
+  localStorage.setItem(LOCAL_SERVER_KEY, url.replace(/\/+$/, ""));
+}
+
+export function clearServerUrl() {
+  localStorage.removeItem(LOCAL_SERVER_KEY);
+}
 
 export class ApiError extends Error {
   status: number;
@@ -19,7 +39,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers.set("Content-Type", "application/json");
   }
 
-  const res = await fetch(`${BASE}${path}`, {
+  const base = getBaseUrl();
+  const res = await fetch(`${base}${path}`, {
     headers,
     credentials: "include",
     ...init,

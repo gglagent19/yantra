@@ -1,4 +1,4 @@
-import type { Project, ProjectWorkspace, WorkspaceOperation } from "@paperclipai/shared";
+import type { Project, ProjectWorkspace, WorkspaceOperation } from "@yantra/shared";
 import { api } from "./client";
 
 function withCompanyScope(path: string, companyId?: string) {

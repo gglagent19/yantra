@@ -13,7 +13,7 @@ import {
   projectWorkspaces,
   projects,
   workspaceRuntimeServices,
-} from "@paperclipai/db";
+} from "@yantra/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -109,10 +109,10 @@ async function runGit(cwd: string, args: string[]) {
 }
 
 async function createTempRepo() {
-  const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-execution-workspace-"));
+  const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "yantra-execution-workspace-"));
   await runGit(repoRoot, ["init"]);
-  await runGit(repoRoot, ["config", "user.name", "Paperclip Test"]);
-  await runGit(repoRoot, ["config", "user.email", "test@paperclip.local"]);
+  await runGit(repoRoot, ["config", "user.name", "Yantra Test"]);
+  await runGit(repoRoot, ["config", "user.email", "test@yantra.local"]);
   await fs.writeFile(path.join(repoRoot, "README.md"), "# Test repo\n", "utf8");
   await runGit(repoRoot, ["add", "README.md"]);
   await runGit(repoRoot, ["commit", "-m", "Initial commit"]);
@@ -127,7 +127,7 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
   const tempDirs = new Set<string>();
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-execution-workspaces-service-");
+    tempDb = await startEmbeddedPostgresTestDatabase("yantra-execution-workspaces-service-");
     db = createDb(tempDb.connectionString);
     svc = executionWorkspaceService(db);
   }, 20_000);
@@ -158,7 +158,7 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Yantra",
       issuePrefix: "PAP",
       requireBoardApprovalForNewAgents: false,
     });
@@ -178,7 +178,7 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
       name: "Primary",
       sourceType: "local_path",
       isPrimary: true,
-      cwd: "/tmp/paperclip-primary",
+      cwd: "/tmp/yantra-primary",
     });
     await db.insert(executionWorkspaces).values({
       id: executionWorkspaceId,
@@ -190,7 +190,7 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
       name: "Shared workspace",
       status: "active",
       providerType: "local_fs",
-      cwd: "/tmp/paperclip-primary",
+      cwd: "/tmp/yantra-primary",
       metadata: {
         config: {
           teardownCommand: "bash ./scripts/teardown.sh",
@@ -226,11 +226,11 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
   it("warns about dirty and unmerged git worktrees and reports cleanup actions", async () => {
     const repoRoot = await createTempRepo();
     tempDirs.add(repoRoot);
-    const worktreePath = path.join(path.dirname(repoRoot), `paperclip-worktree-${randomUUID()}`);
+    const worktreePath = path.join(path.dirname(repoRoot), `yantra-worktree-${randomUUID()}`);
     tempDirs.add(worktreePath);
 
-    await runGit(repoRoot, ["branch", "paperclip-close-check"]);
-    await runGit(repoRoot, ["worktree", "add", worktreePath, "paperclip-close-check"]);
+    await runGit(repoRoot, ["branch", "yantra-close-check"]);
+    await runGit(repoRoot, ["worktree", "add", worktreePath, "yantra-close-check"]);
     await fs.writeFile(path.join(worktreePath, "feature.txt"), "hello\n", "utf8");
     await runGit(worktreePath, ["add", "feature.txt"]);
     await runGit(worktreePath, ["commit", "-m", "Feature commit"]);
@@ -243,7 +243,7 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Yantra",
       issuePrefix: "PAP",
       requireBoardApprovalForNewAgents: false,
     });
@@ -282,7 +282,7 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
       providerType: "git_worktree",
       cwd: worktreePath,
       providerRef: worktreePath,
-      branchName: "paperclip-close-check",
+      branchName: "yantra-close-check",
       baseRef: "main",
       metadata: {
         createdByRuntime: true,
@@ -302,7 +302,7 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
       isDestructiveCloseAllowed: true,
       git: {
         workspacePath: worktreePath,
-        branchName: "paperclip-close-check",
+        branchName: "yantra-close-check",
         baseRef: "main",
         createdByRuntime: true,
         hasDirtyTrackedFiles: false,
@@ -332,14 +332,14 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
     const executionWorkspaceId = randomUUID();
     const olderServiceId = randomUUID();
     const currentServiceId = randomUUID();
-    const reuseKey = `project_workspace:${projectWorkspaceId}:paperclip-dev`;
+    const reuseKey = `project_workspace:${projectWorkspaceId}:yantra-dev`;
     const startedAt = new Date("2026-04-04T17:00:00.000Z");
     const stoppedAt = new Date("2026-04-04T17:05:00.000Z");
     const runningAt = new Date("2026-04-04T17:10:00.000Z");
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Yantra",
       issuePrefix: "PAP",
       requireBoardApprovalForNewAgents: false,
     });
@@ -359,12 +359,12 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
       name: "Primary",
       sourceType: "local_path",
       isPrimary: true,
-      cwd: "/tmp/paperclip-primary",
+      cwd: "/tmp/yantra-primary",
       metadata: {
         runtimeConfig: {
           desiredState: "running",
           workspaceRuntime: {
-            services: [{ name: "paperclip-dev", command: "pnpm dev" }],
+            services: [{ name: "yantra-dev", command: "pnpm dev" }],
           },
         },
       },
@@ -379,7 +379,7 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
       name: "Shared workspace",
       status: "active",
       providerType: "local_fs",
-      cwd: "/tmp/paperclip-primary",
+      cwd: "/tmp/yantra-primary",
     });
     await db.insert(workspaceRuntimeServices).values([
       {
@@ -391,12 +391,12 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
         issueId: null,
         scopeType: "project_workspace",
         scopeId: projectWorkspaceId,
-        serviceName: "paperclip-dev",
+        serviceName: "yantra-dev",
         status: "stopped",
         lifecycle: "shared",
         reuseKey,
         command: "pnpm dev",
-        cwd: "/tmp/paperclip-primary",
+        cwd: "/tmp/yantra-primary",
         port: 49195,
         url: "http://127.0.0.1:49195",
         provider: "local_process",
@@ -420,12 +420,12 @@ describeEmbeddedPostgres("executionWorkspaceService.getCloseReadiness", () => {
         issueId: null,
         scopeType: "project_workspace",
         scopeId: projectWorkspaceId,
-        serviceName: "paperclip-dev",
+        serviceName: "yantra-dev",
         status: "running",
         lifecycle: "shared",
         reuseKey,
         command: "pnpm dev",
-        cwd: "/tmp/paperclip-primary",
+        cwd: "/tmp/yantra-primary",
         port: 49222,
         url: "http://127.0.0.1:49222",
         provider: "local_process",

@@ -7,7 +7,7 @@ drizzle/meta/
 coverage/
 .DS_Store
 data/
-.paperclip/
+.yantra/
 .pnpm-store/
 tmp-*
 cli/tmp/
@@ -37,7 +37,7 @@ feedback-export-*
 *.tmp
 .vscode/
 .claude/settings.local.json
-.paperclip-local/
+.yantra-local/
 /.idea/
 /.agents/
 

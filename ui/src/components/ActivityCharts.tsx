@@ -1,4 +1,4 @@
-import type { HeartbeatRun } from "@paperclipai/shared";
+import type { HeartbeatRun } from "@yantra/shared";
 
 /* ---- Utilities ---- */
 
@@ -46,10 +46,10 @@ function ChartLegend({ items }: { items: { color: string; label: string }[] }) {
 
 export function ChartCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <div className="border border-border rounded-lg p-4 space-y-3">
-      <div>
-        <h3 className="text-xs font-medium text-muted-foreground">{title}</h3>
-        {subtitle && <span className="text-[10px] text-muted-foreground/60">{subtitle}</span>}
+    <div className="bg-card border border-border/10 rounded-xl p-6 space-y-4 shadow-sm">
+      <div className="flex justify-between items-center">
+        <h3 className="text-sm font-bold font-headline text-foreground">{title}</h3>
+        {subtitle && <span className="text-[10px] text-muted-foreground">{subtitle}</span>}
       </div>
       {children}
     </div>

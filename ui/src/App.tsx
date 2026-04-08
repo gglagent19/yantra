@@ -1,10 +1,14 @@
+import { useCallback, useEffect, useState } from "react";
 import { Navigate, Outlet, Route, Routes, useLocation, useParams } from "@/lib/router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Layout } from "./components/Layout";
 import { OnboardingWizard } from "./components/OnboardingWizard";
+import { ConnectServer } from "./pages/ConnectServer";
 import { authApi } from "./api/auth";
 import { healthApi } from "./api/health";
+import { getServerUrl } from "./api/client";
+import { useCurrentUser } from "./hooks/useCurrentUser";
 import { Dashboard } from "./pages/Dashboard";
 import { Companies } from "./pages/Companies";
 import { Agents } from "./pages/Agents";
@@ -43,6 +47,7 @@ import { AuthPage } from "./pages/Auth";
 import { BoardClaimPage } from "./pages/BoardClaim";
 import { CliAuthPage } from "./pages/CliAuth";
 import { InviteLandingPage } from "./pages/InviteLanding";
+import { AdminPanel } from "./pages/AdminPanel";
 import { NotFoundPage } from "./pages/NotFound";
 import { queryKeys } from "./lib/queryKeys";
 import { useCompany } from "./context/CompanyContext";
@@ -57,11 +62,11 @@ function BootstrapPendingPage({ hasActiveInvite = false }: { hasActiveInvite?: b
         <h1 className="text-xl font-semibold">Instance setup required</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {hasActiveInvite
-            ? "No instance admin exists yet. A bootstrap invite is already active. Check your Paperclip startup logs for the first admin invite URL, or run this command to rotate it:"
-            : "No instance admin exists yet. Run this command in your Paperclip environment to generate the first admin invite URL:"}
+            ? "No instance admin exists yet. A bootstrap invite is already active. Check your Yantra startup logs for the first admin invite URL, or run this command to rotate it:"
+            : "No instance admin exists yet. Run this command in your Yantra environment to generate the first admin invite URL:"}
         </p>
         <pre className="mt-4 overflow-x-auto rounded-md border border-border bg-muted/30 p-3 text-xs">
-{`pnpm paperclipai auth bootstrap-ceo`}
+{`pnpm yantraai auth bootstrap-ceo`}
         </pre>
       </div>
     </div>
@@ -233,10 +238,20 @@ function OnboardingRoutePage() {
 }
 
 function CompanyRootRedirect() {
-  const { companies, selectedCompany, loading } = useCompany();
+  const { companies, selectedCompany, loading, reloadCompanies } = useCompany();
   const location = useLocation();
+  const [retried, setRetried] = useState(false);
 
-  if (loading) {
+  // In authenticated mode, the company list may be stale from a previous session.
+  // Retry once before redirecting to onboarding.
+  useEffect(() => {
+    if (!loading && companies.length === 0 && !retried) {
+      setRetried(true);
+      reloadCompanies();
+    }
+  }, [loading, companies.length, retried, reloadCompanies]);
+
+  if (loading || (!retried && companies.length === 0)) {
     return <div className="mx-auto max-w-xl py-10 text-sm text-muted-foreground">Loading...</div>;
   }
 
@@ -258,9 +273,17 @@ function CompanyRootRedirect() {
 
 function UnprefixedBoardRedirect() {
   const location = useLocation();
-  const { companies, selectedCompany, loading } = useCompany();
+  const { companies, selectedCompany, loading, reloadCompanies } = useCompany();
+  const [retried, setRetried] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && companies.length === 0 && !retried) {
+      setRetried(true);
+      reloadCompanies();
+    }
+  }, [loading, companies.length, retried, reloadCompanies]);
+
+  if (loading || (!retried && companies.length === 0)) {
     return <div className="mx-auto max-w-xl py-10 text-sm text-muted-foreground">Loading...</div>;
   }
 
@@ -303,7 +326,32 @@ function NoCompaniesStartPage() {
   );
 }
 
+function AdminGuard() {
+  const { isAdmin, loading } = useCurrentUser();
+  if (loading) return <div className="mx-auto max-w-xl py-10 text-sm text-muted-foreground">Loading...</div>;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <Outlet />;
+}
+
+function isHostedMode(): boolean {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname;
+  return host !== "localhost" && host !== "127.0.0.1" && !host.startsWith("192.168.");
+}
+
 export function App() {
+  const queryClient = useQueryClient();
+  const [serverReady, setServerReady] = useState(() => !isHostedMode() || !!getServerUrl());
+
+  const handleConnected = useCallback(() => {
+    setServerReady(true);
+    queryClient.clear();
+  }, [queryClient]);
+
+  if (!serverReady) {
+    return <ConnectServer onConnected={handleConnected} />;
+  }
+
   return (
     <>
       <Routes>
@@ -348,6 +396,11 @@ export function App() {
           <Route path="projects/:projectId/configuration" element={<UnprefixedBoardRedirect />} />
           <Route path="execution-workspaces/:workspaceId" element={<UnprefixedBoardRedirect />} />
           <Route path="tests/ux/runs" element={<UnprefixedBoardRedirect />} />
+          <Route path="admin" element={<AdminGuard />}>
+            <Route element={<Layout />}>
+              <Route index element={<AdminPanel />} />
+            </Route>
+          </Route>
           <Route path=":companyPrefix" element={<Layout />}>
             {boardRoutes()}
           </Route>

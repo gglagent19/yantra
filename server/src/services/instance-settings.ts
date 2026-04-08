@@ -1,5 +1,5 @@
-import type { Db } from "@paperclipai/db";
-import { companies, instanceSettings } from "@paperclipai/db";
+import type { Db } from "@yantra/db";
+import { companies, instanceSettings } from "@yantra/db";
 import {
   DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
   instanceGeneralSettingsSchema,
@@ -9,7 +9,7 @@ import {
   type PatchInstanceGeneralSettings,
   type InstanceSettings,
   type PatchInstanceExperimentalSettings,
-} from "@paperclipai/shared";
+} from "@yantra/shared";
 import { eq } from "drizzle-orm";
 
 const DEFAULT_SINGLETON_KEY = "default";

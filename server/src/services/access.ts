@@ -1,11 +1,17 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import { and, eq, inArray, sql, gte, count } from "drizzle-orm";
+import type { Db } from "@yantra/db";
 import {
   companyMemberships,
   instanceUserRoles,
   principalPermissionGrants,
-} from "@paperclipai/db";
-import type { PermissionKey, PrincipalType } from "@paperclipai/shared";
+  authUsers,
+  authSessions,
+  companies,
+  agents,
+  issues,
+  heartbeatRuns,
+} from "@yantra/db";
+import type { PermissionKey, PrincipalType } from "@yantra/shared";
 
 type MembershipRow = typeof companyMemberships.$inferSelect;
 type GrantInput = {
@@ -137,6 +143,66 @@ export function accessService(db: Db) {
     });
 
     return member;
+  }
+
+  async function getAdminStats() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const [totalUsers] = await db.select({ count: count() }).from(authUsers);
+    const [usersToday] = await db.select({ count: count() }).from(authUsers).where(gte(authUsers.createdAt, today));
+    const [usersThisWeek] = await db.select({ count: count() }).from(authUsers).where(gte(authUsers.createdAt, weekAgo));
+    const [usersThisMonth] = await db.select({ count: count() }).from(authUsers).where(gte(authUsers.createdAt, monthAgo));
+    const [activeSessions] = await db.select({ count: count() }).from(authSessions).where(gte(authSessions.expiresAt, now));
+    const [totalCompanies] = await db.select({ count: count() }).from(companies);
+    const [totalAgents] = await db.select({ count: count() }).from(agents);
+    const [totalIssues] = await db.select({ count: count() }).from(issues);
+    const [totalRuns] = await db.select({ count: count() }).from(heartbeatRuns);
+    const [adminCount] = await db.select({ count: count() }).from(instanceUserRoles);
+
+    // Recent signups (last 30 days, grouped by day)
+    const recentSignups = await db
+      .select({
+        day: sql<string>`to_char(${authUsers.createdAt}, 'YYYY-MM-DD')`,
+        count: count(),
+      })
+      .from(authUsers)
+      .where(gte(authUsers.createdAt, monthAgo))
+      .groupBy(sql`to_char(${authUsers.createdAt}, 'YYYY-MM-DD')`)
+      .orderBy(sql`to_char(${authUsers.createdAt}, 'YYYY-MM-DD')`);
+
+    return {
+      users: {
+        total: totalUsers?.count ?? 0,
+        today: usersToday?.count ?? 0,
+        thisWeek: usersThisWeek?.count ?? 0,
+        thisMonth: usersThisMonth?.count ?? 0,
+        admins: adminCount?.count ?? 0,
+      },
+      activeSessions: activeSessions?.count ?? 0,
+      companies: totalCompanies?.count ?? 0,
+      agents: totalAgents?.count ?? 0,
+      issues: totalIssues?.count ?? 0,
+      runs: totalRuns?.count ?? 0,
+      recentSignups,
+    };
+  }
+
+  async function listAllUsers() {
+    const users = await db
+      .select({
+        id: authUsers.id,
+        name: authUsers.name,
+        email: authUsers.email,
+        createdAt: authUsers.createdAt,
+      })
+      .from(authUsers)
+      .orderBy(sql`${authUsers.createdAt} desc`);
+    const adminRoles = await db.select().from(instanceUserRoles);
+    const adminSet = new Set(adminRoles.map((r) => r.userId));
+    return users.map((u) => ({ ...u, isAdmin: adminSet.has(u.id) }));
   }
 
   async function promoteInstanceAdmin(userId: string) {
@@ -360,6 +426,8 @@ export function accessService(db: Db) {
   }
 
   return {
+    getAdminStats,
+    listAllUsers,
     isInstanceAdmin,
     canUser,
     hasPermission,

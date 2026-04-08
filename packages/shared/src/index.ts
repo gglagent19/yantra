@@ -333,7 +333,7 @@ export type {
   PluginLauncherDeclaration,
   PluginMinimumHostVersion,
   PluginUiDeclaration,
-  PaperclipPluginManifestV1,
+  YantraPluginManifestV1,
   PluginRecord,
   PluginStateRecord,
   PluginConfig,
@@ -628,7 +628,7 @@ export {
 } from "./routine-variables.js";
 
 export {
-  paperclipConfigSchema,
+  yantraConfigSchema,
   configMetaSchema,
   llmConfigSchema,
   databaseBackupConfigSchema,
@@ -643,7 +643,7 @@ export {
   secretsLocalEncryptedConfigSchema,
   telemetryConfigSchema,
   type TelemetryConfig,
-  type PaperclipConfig,
+  type YantraConfig,
   type LlmConfig,
   type DatabaseBackupConfig,
   type DatabaseConfig,

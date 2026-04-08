@@ -1,0 +1,23 @@
+[Unit]
+Description=Yantra AI Agent Orchestrator
+Requires=yantra-db.service
+After=yantra-db.service
+
+[Container]
+Image=yantra-local
+ContainerName=yantra
+Pod=yantra.pod
+Volume=%h/.local/share/yantra:/yantra:Z
+Environment=HOST=0.0.0.0
+Environment=YANTRA_HOME=/yantra
+Environment=YANTRA_DEPLOYMENT_MODE=authenticated
+Environment=YANTRA_DEPLOYMENT_EXPOSURE=private
+Environment=YANTRA_PUBLIC_URL=http://localhost:3100
+EnvironmentFile=%h/.config/containers/systemd/yantra.env
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

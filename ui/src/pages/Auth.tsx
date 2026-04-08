@@ -4,8 +4,8 @@ import { useNavigate, useSearchParams } from "@/lib/router";
 import { authApi } from "../api/auth";
 import { queryKeys } from "../lib/queryKeys";
 import { Button } from "@/components/ui/button";
-import { AsciiArtAnimation } from "@/components/AsciiArtAnimation";
-import { Sparkles } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Key, Loader2 } from "lucide-react";
 
 type AuthMode = "sign_in" | "sign_up";
 
@@ -62,104 +62,127 @@ export function AuthPage() {
 
   if (isSessionLoading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 flex bg-background">
-      {/* Left half — form */}
-      <div className="w-full md:w-1/2 flex flex-col overflow-y-auto">
-        <div className="w-full max-w-md mx-auto my-auto px-8 py-12">
-          <div className="flex items-center gap-2 mb-8">
-            <Sparkles className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Paperclip</span>
+    <div className="fixed inset-0 flex items-center justify-center bg-background p-4">
+      {/* Decorative background blurs */}
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-tertiary/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border/20 overflow-hidden">
+        {/* Header */}
+        <div className="px-8 pt-8 pb-6 border-b border-border/10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-[#0061ff] flex items-center justify-center text-white">
+              <Key className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-extrabold font-headline tracking-tight text-foreground">
+                {mode === "sign_in" ? "Welcome Back" : "Create Account"}
+              </h1>
+              <p className="text-xs text-muted-foreground font-medium">
+                Architect AI Platform
+              </p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {mode === "sign_in"
+              ? "Sign in with your credentials to continue."
+              : "Set up your account to get started."}
+          </p>
+        </div>
+
+        {/* Form */}
+        <form
+          className="p-8 space-y-5"
+          method="post"
+          action={mode === "sign_up" ? "/api/auth/sign-up/email" : "/api/auth/sign-in/email"}
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (mutation.isPending) return;
+            if (!canSubmit) {
+              setError("Please fill in all required fields.");
+              return;
+            }
+            mutation.mutate();
+          }}
+        >
+          {mode === "sign_up" && (
+            <div className="space-y-1.5">
+              <label htmlFor="name" className="text-sm font-semibold text-foreground/70">Full Name</label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="John Doe"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                autoComplete="name"
+                autoFocus
+              />
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <label htmlFor="email" className="text-sm font-semibold text-foreground/70">Email</label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              autoFocus={mode === "sign_in"}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="password" className="text-sm font-semibold text-foreground/70">Password</label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              placeholder={mode === "sign_up" ? "Minimum 8 characters" : "Enter your password"}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete={mode === "sign_in" ? "current-password" : "new-password"}
+            />
           </div>
 
-          <h1 className="text-xl font-semibold">
-            {mode === "sign_in" ? "Sign in to Paperclip" : "Create your Paperclip account"}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "sign_in"
-              ? "Use your email and password to access this instance."
-              : "Create an account for this instance. Email confirmation is not required in v1."}
-          </p>
+          {error && (
+            <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
+              <p className="text-xs font-medium text-destructive">{error}</p>
+            </div>
+          )}
 
-          <form
-            className="mt-6 space-y-4"
-            method="post"
-            action={mode === "sign_up" ? "/api/auth/sign-up/email" : "/api/auth/sign-in/email"}
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (mutation.isPending) return;
-              if (!canSubmit) {
-                setError("Please fill in all required fields.");
-                return;
-              }
-              mutation.mutate();
-            }}
+          <Button
+            type="submit"
+            disabled={mutation.isPending}
+            aria-disabled={!canSubmit || mutation.isPending}
+            className={`w-full bg-gradient-to-br from-primary to-[#0061ff] text-white rounded-xl py-3 font-bold shadow-lg shadow-primary/20 ${!canSubmit && !mutation.isPending ? "opacity-50" : ""}`}
           >
-            {mode === "sign_up" && (
-              <div>
-                <label htmlFor="name" className="text-xs text-muted-foreground mb-1 block">Name</label>
-                <input
-                  id="name"
-                  name="name"
-                  className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  autoComplete="name"
-                  autoFocus
-                />
-              </div>
+            {mutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : mode === "sign_in" ? (
+              "Sign In"
+            ) : (
+              "Create Account"
             )}
-            <div>
-              <label htmlFor="email" className="text-xs text-muted-foreground mb-1 block">Email</label>
-              <input
-                id="email"
-                name="email"
-                className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-                autoFocus={mode === "sign_in"}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="text-xs text-muted-foreground mb-1 block">Password</label>
-              <input
-                id="password"
-                name="password"
-                className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete={mode === "sign_in" ? "current-password" : "new-password"}
-              />
-            </div>
-            {error && <p className="text-xs text-destructive">{error}</p>}
-            <Button
-              type="submit"
-              disabled={mutation.isPending}
-              aria-disabled={!canSubmit || mutation.isPending}
-              className={`w-full ${!canSubmit && !mutation.isPending ? "opacity-50" : ""}`}
-            >
-              {mutation.isPending
-                ? "Working…"
-                : mode === "sign_in"
-                  ? "Sign In"
-                  : "Create Account"}
-            </Button>
-          </form>
+          </Button>
+        </form>
 
-          <div className="mt-5 text-sm text-muted-foreground">
+        {/* Footer */}
+        <div className="px-8 pb-6 text-center">
+          <p className="text-sm text-muted-foreground">
             {mode === "sign_in" ? "Need an account?" : "Already have an account?"}{" "}
             <button
               type="button"
-              className="font-medium text-foreground underline underline-offset-2"
+              className="font-bold text-primary hover:underline underline-offset-2"
               onClick={() => {
                 setError(null);
                 setMode(mode === "sign_in" ? "sign_up" : "sign_in");
@@ -167,13 +190,8 @@ export function AuthPage() {
             >
               {mode === "sign_in" ? "Create one" : "Sign in"}
             </button>
-          </div>
+          </p>
         </div>
-      </div>
-
-      {/* Right half — ASCII art animation (hidden on mobile) */}
-      <div className="hidden md:block w-1/2 overflow-hidden">
-        <AsciiArtAnimation />
       </div>
     </div>
   );

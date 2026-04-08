@@ -23,7 +23,7 @@ function createTempDir(prefix: string): string {
 }
 
 async function createTempDatabase(): Promise<string> {
-  const db = await startEmbeddedPostgresTestDatabase("paperclip-db-backup-");
+  const db = await startEmbeddedPostgresTestDatabase("yantra-db-backup-");
   cleanups.push(db.cleanup);
   return db.connectionString;
 }
@@ -52,7 +52,7 @@ if (!embeddedPostgresSupport.supported) {
 
 describe("createBufferedTextFileWriter", () => {
   it("preserves line boundaries across buffered flushes", async () => {
-    const tempDir = createTempDir("paperclip-buffered-writer-");
+    const tempDir = createTempDir("yantra-buffered-writer-");
     const outputPath = path.join(tempDir, "backup.sql");
     const writer = createBufferedTextFileWriter(outputPath, 16);
     const lines = [
@@ -80,9 +80,9 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
       const sourceConnectionString = await createTempDatabase();
       const restoreConnectionString = await createSiblingDatabase(
         sourceConnectionString,
-        "paperclip_restore_target",
+        "yantra_restore_target",
       );
-      const backupDir = createTempDir("paperclip-db-backup-output-");
+      const backupDir = createTempDir("yantra-db-backup-output-");
       const sourceSql = postgres(sourceConnectionString, { max: 1, onnotice: () => {} });
       const restoreSql = postgres(restoreConnectionString, { max: 1, onnotice: () => {} });
 
@@ -126,10 +126,10 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
           connectionString: sourceConnectionString,
           backupDir,
           retentionDays: 7,
-          filenamePrefix: "paperclip-test",
+          filenamePrefix: "yantra-test",
         });
 
-        expect(result.backupFile).toMatch(/paperclip-test-.*\.sql$/);
+        expect(result.backupFile).toMatch(/yantra-test-.*\.sql$/);
         expect(result.sizeBytes).toBeGreaterThan(1024 * 1024);
         expect(fs.existsSync(result.backupFile)).toBe(true);
 
@@ -182,25 +182,25 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
     async () => {
       const restoreConnectionString = await createTempDatabase();
       const restoreSql = postgres(restoreConnectionString, { max: 1, onnotice: () => {} });
-      const backupDir = createTempDir("paperclip-db-restore-manual-");
+      const backupDir = createTempDir("yantra-db-restore-manual-");
       const backupFile = path.join(backupDir, "manual.sql");
 
       try {
         await fs.promises.writeFile(
           backupFile,
           [
-            "-- Paperclip database backup",
+            "-- Yantra database backup",
             "-- Created: 2026-04-06T00:00:00.000Z",
             "",
             "BEGIN;",
-            "-- paperclip statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
+            "-- yantra statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
             "CREATE TABLE public.restore_stream_test (id integer primary key, payload text not null);",
-            "-- paperclip statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
+            "-- yantra statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
             "INSERT INTO public.restore_stream_test (id, payload)",
             "VALUES (1, 'hello');",
-            "-- paperclip statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
+            "-- yantra statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
             "COMMIT;",
-            "-- paperclip statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
+            "-- yantra statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
           ].join("\n"),
           "utf8",
         );

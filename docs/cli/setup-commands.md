@@ -5,35 +5,35 @@ summary: Onboard, run, doctor, and configure
 
 Instance setup and diagnostics commands.
 
-## `paperclipai run`
+## `yantraai run`
 
 One-command bootstrap and start:
 
 ```sh
-pnpm paperclipai run
+pnpm yantraai run
 ```
 
 Does:
 
 1. Auto-onboards if config is missing
-2. Runs `paperclipai doctor` with repair enabled
+2. Runs `yantraai doctor` with repair enabled
 3. Starts the server when checks pass
 
 Choose a specific instance:
 
 ```sh
-pnpm paperclipai run --instance dev
+pnpm yantraai run --instance dev
 ```
 
-## `paperclipai onboard`
+## `yantraai onboard`
 
 Interactive first-time setup:
 
 ```sh
-pnpm paperclipai onboard
+pnpm yantraai onboard
 ```
 
-If Paperclip is already configured, rerunning `onboard` keeps the existing config in place. Use `paperclipai configure` to change settings on an existing install.
+If Yantra is already configured, rerunning `onboard` keeps the existing config in place. Use `yantraai configure` to change settings on an existing install.
 
 First prompt:
 
@@ -43,24 +43,24 @@ First prompt:
 Start immediately after onboarding:
 
 ```sh
-pnpm paperclipai onboard --run
+pnpm yantraai onboard --run
 ```
 
 Non-interactive defaults + immediate start (opens browser on server listen):
 
 ```sh
-pnpm paperclipai onboard --yes
+pnpm yantraai onboard --yes
 ```
 
-On an existing install, `--yes` now preserves the current config and just starts Paperclip with that setup.
+On an existing install, `--yes` now preserves the current config and just starts Yantra with that setup.
 
-## `paperclipai doctor`
+## `yantraai doctor`
 
 Health checks with optional auto-repair:
 
 ```sh
-pnpm paperclipai doctor
-pnpm paperclipai doctor --repair
+pnpm yantraai doctor
+pnpm yantraai doctor --repair
 ```
 
 Validates:
@@ -71,51 +71,51 @@ Validates:
 - Storage configuration
 - Missing key files
 
-## `paperclipai configure`
+## `yantraai configure`
 
 Update configuration sections:
 
 ```sh
-pnpm paperclipai configure --section server
-pnpm paperclipai configure --section secrets
-pnpm paperclipai configure --section storage
+pnpm yantraai configure --section server
+pnpm yantraai configure --section secrets
+pnpm yantraai configure --section storage
 ```
 
-## `paperclipai env`
+## `yantraai env`
 
 Show resolved environment configuration:
 
 ```sh
-pnpm paperclipai env
+pnpm yantraai env
 ```
 
-## `paperclipai allowed-hostname`
+## `yantraai allowed-hostname`
 
 Allow a private hostname for authenticated/private mode:
 
 ```sh
-pnpm paperclipai allowed-hostname my-tailscale-host
+pnpm yantraai allowed-hostname my-tailscale-host
 ```
 
 ## Local Storage Paths
 
 | Data | Default Path |
 |------|-------------|
-| Config | `~/.paperclip/instances/default/config.json` |
-| Database | `~/.paperclip/instances/default/db` |
-| Logs | `~/.paperclip/instances/default/logs` |
-| Storage | `~/.paperclip/instances/default/data/storage` |
-| Secrets key | `~/.paperclip/instances/default/secrets/master.key` |
+| Config | `~/.yantra/instances/default/config.json` |
+| Database | `~/.yantra/instances/default/db` |
+| Logs | `~/.yantra/instances/default/logs` |
+| Storage | `~/.yantra/instances/default/data/storage` |
+| Secrets key | `~/.yantra/instances/default/secrets/master.key` |
 
 Override with:
 
 ```sh
-PAPERCLIP_HOME=/custom/home PAPERCLIP_INSTANCE_ID=dev pnpm paperclipai run
+YANTRA_HOME=/custom/home YANTRA_INSTANCE_ID=dev pnpm yantraai run
 ```
 
 Or pass `--data-dir` directly on any command:
 
 ```sh
-pnpm paperclipai run --data-dir ./tmp/paperclip-dev
-pnpm paperclipai doctor --data-dir ./tmp/paperclip-dev
+pnpm yantraai run --data-dir ./tmp/yantra-dev
+pnpm yantraai doctor --data-dir ./tmp/yantra-dev
 ```

@@ -209,7 +209,7 @@ export type {
   PluginLauncherDeclaration,
   PluginMinimumHostVersion,
   PluginUiDeclaration,
-  PaperclipPluginManifestV1,
+  YantraPluginManifestV1,
   PluginRecord,
   PluginStateRecord,
   PluginConfig,
