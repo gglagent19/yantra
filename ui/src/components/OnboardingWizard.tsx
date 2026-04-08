@@ -608,6 +608,20 @@ export function OnboardingWizard() {
 
   if (!effectiveOnboardingOpen) return null;
 
+  const STEPS = [
+    { step: 1 as Step, label: "Company", icon: Building2 },
+    { step: 2 as Step, label: "Agent", icon: Bot },
+    { step: 3 as Step, label: "Task", icon: ListTodo },
+    { step: 4 as Step, label: "Launch", icon: Rocket },
+  ];
+
+  const stepMeta: Record<Step, { title: string; description: string }> = {
+    1: { title: "Name your company", description: "This is the organization your agents will work for." },
+    2: { title: "Create your first agent", description: "Choose how this agent will run tasks and define its core identity." },
+    3: { title: "Give it something to do", description: "Give your agent a small task to start with." },
+    4: { title: "Ready to launch", description: "Everything is set up. Review and launch." },
+  };
+
   return (
     <Dialog
       open={effectiveOnboardingOpen}
@@ -619,662 +633,638 @@ export function OnboardingWizard() {
       }}
     >
       <DialogPortal>
-        {/* Plain div instead of DialogOverlay — Radix's overlay wraps in
-            RemoveScroll which blocks wheel events on our custom (non-DialogContent)
-            scroll container. A plain div preserves the background without scroll-locking. */}
         <div className="fixed inset-0 z-50 bg-background" />
         <div className="fixed inset-0 z-50 flex" onKeyDown={handleKeyDown}>
-          {/* Close button */}
-          <button
-            onClick={handleClose}
-            className="absolute top-4 left-4 z-10 rounded-sm p-1.5 text-muted-foreground/60 hover:text-foreground transition-colors"
-          >
-            <X className="h-5 w-5" />
-            <span className="sr-only">Close</span>
-          </button>
 
-          {/* Left half — form */}
-          <div
-            className={cn(
-              "w-full flex flex-col overflow-y-auto transition-[width] duration-500 ease-in-out",
-              step === 1 ? "md:w-1/2" : "md:w-full"
-            )}
-          >
-            <div className="w-full max-w-md mx-auto my-auto px-8 py-12 shrink-0">
-              {/* Progress tabs */}
-              <div className="flex items-center gap-0 mb-8 border-b border-border">
-                {(
-                  [
-                    { step: 1 as Step, label: "Company", icon: Building2 },
-                    { step: 2 as Step, label: "Agent", icon: Bot },
-                    { step: 3 as Step, label: "Task", icon: ListTodo },
-                    { step: 4 as Step, label: "Launch", icon: Rocket }
-                  ] as const
-                ).map(({ step: s, label, icon: Icon }) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setStep(s)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors cursor-pointer",
-                      s === step
-                        ? "border-foreground text-foreground"
-                        : "border-transparent text-muted-foreground hover:text-foreground/70 hover:border-border"
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
-                  </button>
-                ))}
-              </div>
+          {/* ───── Left sidebar ───── */}
+          <div className="hidden md:flex w-64 shrink-0 flex-col border-r border-border bg-muted/30">
+            {/* Logo / title */}
+            <div className="flex items-center gap-2 px-5 py-5">
+              <Rocket className="h-5 w-5 text-foreground" />
+              <span className="text-sm font-semibold text-foreground tracking-tight">Onboarding</span>
+            </div>
 
-              {/* Step content */}
-              {step === 1 && (
-                <div className="space-y-5">
-                  <div className="flex items-center gap-3 mb-1">
-                    <div className="bg-muted/50 p-2">
-                      <Building2 className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Name your company</h3>
-                      <p className="text-xs text-muted-foreground">
-                        This is the organization your agents will work for.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-3 group">
-                    <label
-                      className={cn(
-                        "text-xs mb-1 block transition-colors",
-                        companyName.trim()
-                          ? "text-foreground"
-                          : "text-muted-foreground group-focus-within:text-foreground"
-                      )}
-                    >
-                      Company name
-                    </label>
-                    <input
-                      className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
-                      placeholder="Acme Corp"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                  <div className="group">
-                    <label
-                      className={cn(
-                        "text-xs mb-1 block transition-colors",
-                        companyGoal.trim()
-                          ? "text-foreground"
-                          : "text-muted-foreground group-focus-within:text-foreground"
-                      )}
-                    >
-                      Mission / goal (optional)
-                    </label>
-                    <textarea
-                      className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50 resize-none min-h-[60px]"
-                      placeholder="What is this company trying to achieve?"
-                      value={companyGoal}
-                      onChange={(e) => setCompanyGoal(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {step === 2 && (
-                <div className="space-y-5">
-                  <div className="flex items-center gap-3 mb-1">
-                    <div className="bg-muted/50 p-2">
-                      <Bot className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Create your first agent</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Choose how this agent will run tasks.
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      Agent name
-                    </label>
-                    <input
-                      className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
-                      placeholder="CEO"
-                      value={agentName}
-                      onChange={(e) => setAgentName(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-
-                  {/* Adapter type radio cards */}
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-2 block">
-                      Adapter type
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {recommendedAdapters.map((opt) => (
-                        <button
-                          key={opt.type}
-                          className={cn(
-                            "flex flex-col items-center gap-1.5 rounded-md border p-3 text-xs transition-colors relative",
-                            adapterType === opt.type
-                              ? "border-foreground bg-accent"
-                              : "border-border hover:bg-accent/50"
-                          )}
-                          onClick={() => {
-                            const nextType = opt.type;
-                            setAdapterType(nextType);
-                            if (nextType === "codex_local" && !model) {
-                              setModel(DEFAULT_CODEX_LOCAL_MODEL);
-                            }
-                            if (nextType !== "codex_local") {
-                              setModel("");
-                            }
-                          }}
-                        >
-                          {opt.recommended && (
-                            <span className="absolute -top-1.5 right-1.5 bg-green-500 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none">
-                              Recommended
-                            </span>
-                          )}
-                          <opt.icon className="h-4 w-4" />
-                          <span className="font-medium">{opt.label}</span>
-                          <span className="text-muted-foreground text-[10px]">
-                            {opt.description}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-
-                    <button
-                      className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => setShowMoreAdapters((v) => !v)}
-                    >
-                      <ChevronDown
-                        className={cn(
-                          "h-3 w-3 transition-transform",
-                          showMoreAdapters ? "rotate-0" : "-rotate-90"
-                        )}
-                      />
-                      More Agent Adapter Types
-                    </button>
-
-                    {showMoreAdapters && (
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        {moreAdapters.map((opt) => (
-                           <button
-                             key={opt.type}
-                             disabled={!!opt.comingSoon}
-                             className={cn(
-                               "flex flex-col items-center gap-1.5 rounded-md border p-3 text-xs transition-colors relative",
-                               opt.comingSoon
-                                 ? "border-border opacity-40 cursor-not-allowed"
-                                 : adapterType === opt.type
-                                 ? "border-foreground bg-accent"
-                                 : "border-border hover:bg-accent/50"
-                             )}
-                             onClick={() => {
-                               if (opt.comingSoon) return;
-                               const nextType = opt.type;
-                              setAdapterType(nextType);
-                              if (nextType === "gemini_local" && !model) {
-                                setModel(DEFAULT_GEMINI_LOCAL_MODEL);
-                                return;
-                              }
-                              if (nextType === "cursor" && !model) {
-                                setModel(DEFAULT_CURSOR_LOCAL_MODEL);
-                                return;
-                              }
-                              if (nextType === "opencode_local") {
-                                if (!model.includes("/")) {
-                                  setModel("");
-                                }
-                                return;
-                              }
-                              setModel("");
-                            }}
-                          >
-                            <opt.icon className="h-4 w-4" />
-                            <span className="font-medium">{opt.label}</span>
-                            <span className="text-muted-foreground text-[10px]">
-                              {opt.comingSoon
-                                ? opt.disabledLabel ?? "Coming soon"
-                                : opt.description}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Conditional adapter fields */}
-                  {isLocalAdapter && (
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">
-                          Model
-                        </label>
-                        <Popover
-                          open={modelOpen}
-                          onOpenChange={(next) => {
-                            setModelOpen(next);
-                            if (!next) setModelSearch("");
-                          }}
-                        >
-                          <PopoverTrigger asChild>
-                            <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm hover:bg-accent/50 transition-colors w-full justify-between">
-                              <span
-                                className={cn(
-                                  !model && "text-muted-foreground"
-                                )}
-                              >
-                                {selectedModel
-                                  ? selectedModel.label
-                                  : model ||
-                                    (adapterType === "opencode_local"
-                                      ? "Select model (required)"
-                                      : "Default")}
-                              </span>
-                              <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-[var(--radix-popover-trigger-width)] p-1"
-                            align="start"
-                          >
-                            <input
-                              className="w-full px-2 py-1.5 text-xs bg-transparent outline-none border-b border-border mb-1 placeholder:text-muted-foreground/50"
-                              placeholder="Search models..."
-                              value={modelSearch}
-                              onChange={(e) => setModelSearch(e.target.value)}
-                              autoFocus
-                            />
-                            {adapterType !== "opencode_local" && (
-                              <button
-                                className={cn(
-                                  "flex items-center gap-2 w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
-                                  !model && "bg-accent"
-                                )}
-                                onClick={() => {
-                                  setModel("");
-                                  setModelOpen(false);
-                                }}
-                              >
-                                Default
-                              </button>
-                            )}
-                            <div className="max-h-[240px] overflow-y-auto">
-                              {groupedModels.map((group) => (
-                                <div
-                                  key={group.provider}
-                                  className="mb-1 last:mb-0"
-                                >
-                                  {adapterType === "opencode_local" && (
-                                    <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                                      {group.provider} ({group.entries.length})
-                                    </div>
-                                  )}
-                                  {group.entries.map((m) => (
-                                    <button
-                                      key={m.id}
-                                      className={cn(
-                                        "flex items-center w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
-                                        m.id === model && "bg-accent"
-                                      )}
-                                      onClick={() => {
-                                        setModel(m.id);
-                                        setModelOpen(false);
-                                      }}
-                                    >
-                                      <span
-                                        className="block w-full text-left truncate"
-                                        title={m.id}
-                                      >
-                                        {adapterType === "opencode_local"
-                                          ? extractModelName(m.id)
-                                          : m.label}
-                                      </span>
-                                    </button>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                            {filteredModels.length === 0 && (
-                              <p className="px-2 py-1.5 text-xs text-muted-foreground">
-                                No models discovered.
-                              </p>
-                            )}
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </div>
+            {/* Navigation items */}
+            <nav className="flex-1 px-3 space-y-1">
+              {STEPS.map(({ step: s, label, icon: Icon }) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStep(s)}
+                  className={cn(
+                    "flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    s === step
+                      ? "bg-accent text-foreground"
+                      : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                   )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {label}
+                </button>
+              ))}
+            </nav>
 
-                  {isLocalAdapter && (
-                    <div className="space-y-2 rounded-md border border-border p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <div>
-                          <p className="text-xs font-medium">
-                            Adapter environment check
-                          </p>
-                          <p className="text-[11px] text-muted-foreground">
-                            Runs a live probe that asks the adapter CLI to
-                            respond with hello.
-                          </p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 px-2.5 text-xs"
-                          disabled={adapterEnvLoading}
-                          onClick={() => void runAdapterEnvironmentTest()}
-                        >
-                          {adapterEnvLoading ? "Testing..." : "Test now"}
-                        </Button>
-                      </div>
-
-                      {adapterEnvError && (
-                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-2.5 py-2 text-[11px] text-destructive">
-                          {adapterEnvError}
-                        </div>
-                      )}
-
-                      {adapterEnvResult &&
-                      adapterEnvResult.status === "pass" ? (
-                        <div className="flex items-center gap-2 rounded-md border border-green-300 dark:border-green-500/40 bg-green-50 dark:bg-green-500/10 px-3 py-2 text-xs text-green-700 dark:text-green-300 animate-in fade-in slide-in-from-bottom-1 duration-300">
-                          <Check className="h-3.5 w-3.5 shrink-0" />
-                          <span className="font-medium">Passed</span>
-                        </div>
-                      ) : adapterEnvResult ? (
-                        <AdapterEnvironmentResult result={adapterEnvResult} />
-                      ) : null}
-
-                      {shouldSuggestUnsetAnthropicApiKey && (
-                        <div className="rounded-md border border-amber-300/60 bg-amber-50/40 px-2.5 py-2 space-y-2">
-                          <p className="text-[11px] text-amber-900/90 leading-relaxed">
-                            Claude failed while{" "}
-                            <span className="font-mono">ANTHROPIC_API_KEY</span>{" "}
-                            is set. You can clear it in this CEO adapter config
-                            and retry the probe.
-                          </p>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 px-2.5 text-xs"
-                            disabled={
-                              adapterEnvLoading || unsetAnthropicLoading
-                            }
-                            onClick={() => void handleUnsetAnthropicApiKey()}
-                          >
-                            {unsetAnthropicLoading
-                              ? "Retrying..."
-                              : "Unset ANTHROPIC_API_KEY"}
-                          </Button>
-                        </div>
-                      )}
-
-                      {adapterEnvResult && adapterEnvResult.status === "fail" && (
-                        <div className="rounded-md border border-border/70 bg-muted/20 px-2.5 py-2 text-[11px] space-y-1.5">
-                          <p className="font-medium">Manual debug</p>
-                          <p className="text-muted-foreground font-mono break-all">
-                            {adapterType === "cursor"
-                              ? `${effectiveAdapterCommand} -p --mode ask --output-format json \"Respond with hello.\"`
-                              : adapterType === "codex_local"
-                              ? `${effectiveAdapterCommand} exec --json -`
-                              : adapterType === "gemini_local"
-                                ? `${effectiveAdapterCommand} --output-format json "Respond with hello."`
-                              : adapterType === "opencode_local"
-                                ? `${effectiveAdapterCommand} run --format json "Respond with hello."`
-                              : `${effectiveAdapterCommand} --print - --output-format stream-json --verbose`}
-                          </p>
-                          <p className="text-muted-foreground">
-                            Prompt:{" "}
-                            <span className="font-mono">Respond with hello.</span>
-                          </p>
-                          {adapterType === "cursor" ||
-                          adapterType === "codex_local" ||
-                          adapterType === "gemini_local" ||
-                          adapterType === "opencode_local" ? (
-                            <p className="text-muted-foreground">
-                              If auth fails, set{" "}
-                              <span className="font-mono">
-                                {adapterType === "cursor"
-                                  ? "CURSOR_API_KEY"
-                                  : adapterType === "gemini_local"
-                                    ? "GEMINI_API_KEY"
-                                    : "OPENAI_API_KEY"}
-                              </span>{" "}
-                              in env or run{" "}
-                              <span className="font-mono">
-                                {adapterType === "cursor"
-                                  ? "agent login"
-                                  : adapterType === "codex_local"
-                                    ? "codex login"
-                                    : adapterType === "gemini_local"
-                                      ? "gemini auth"
-                                      : "opencode auth login"}
-                              </span>
-                              .
-                            </p>
-                          ) : (
-                            <p className="text-muted-foreground">
-                              If login is required, run{" "}
-                              <span className="font-mono">claude login</span>{" "}
-                              and retry.
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {(adapterType === "http" ||
-                    adapterType === "openclaw_gateway") && (
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">
-                        {adapterType === "openclaw_gateway"
-                          ? "Gateway URL"
-                          : "Webhook URL"}
-                      </label>
-                      <input
-                        className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm font-mono outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
-                        placeholder={
-                          adapterType === "openclaw_gateway"
-                            ? "ws://127.0.0.1:18789"
-                            : "https://..."
-                        }
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {step === 3 && (
-                <div className="space-y-5">
-                  <div className="flex items-center gap-3 mb-1">
-                    <div className="bg-muted/50 p-2">
-                      <ListTodo className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Give it something to do</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Give your agent a small task to start with — a bug fix,
-                        a research question, writing a script.
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      Task title
-                    </label>
-                    <input
-                      className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
-                      placeholder="e.g. Research competitor pricing"
-                      value={taskTitle}
-                      onChange={(e) => setTaskTitle(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      Description (optional)
-                    </label>
-                    <textarea
-                      ref={textareaRef}
-                      className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50 resize-none min-h-[120px] max-h-[300px] overflow-y-auto"
-                      placeholder="Add more detail about what the agent should do..."
-                      value={taskDescription}
-                      onChange={(e) => setTaskDescription(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {step === 4 && (
-                <div className="space-y-5">
-                  <div className="flex items-center gap-3 mb-1">
-                    <div className="bg-muted/50 p-2">
-                      <Rocket className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Ready to launch</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Everything is set up. Launching now will create the
-                        starter task, wake the agent, and open the issue.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="border border-border divide-y divide-border">
-                    <div className="flex items-center gap-3 px-3 py-2.5">
-                      <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {companyName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Company</p>
-                      </div>
-                      <Check className="h-4 w-4 text-green-500 shrink-0" />
-                    </div>
-                    <div className="flex items-center gap-3 px-3 py-2.5">
-                      <Bot className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {agentName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {getUIAdapter(adapterType).label}
-                        </p>
-                      </div>
-                      <Check className="h-4 w-4 text-green-500 shrink-0" />
-                    </div>
-                    <div className="flex items-center gap-3 px-3 py-2.5">
-                      <ListTodo className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {taskTitle}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Task</p>
-                      </div>
-                      <Check className="h-4 w-4 text-green-500 shrink-0" />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Error */}
-              {error && (
-                <div className="mt-3">
-                  <p className="text-xs text-destructive">{error}</p>
-                </div>
-              )}
-
-              {/* Footer navigation */}
-              <div className="flex items-center justify-between mt-8">
-                <div>
-                  {step > 1 && step > (onboardingOptions.initialStep ?? 1) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setStep((step - 1) as Step)}
-                      disabled={loading}
-                    >
-                      <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-                      Back
-                    </Button>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {step === 1 && (
-                    <Button
-                      size="sm"
-                      disabled={!companyName.trim() || loading}
-                      onClick={handleStep1Next}
-                    >
-                      {loading ? (
-                        <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                      ) : (
-                        <ArrowRight className="h-3.5 w-3.5 mr-1" />
-                      )}
-                      {loading ? "Creating..." : "Next"}
-                    </Button>
-                  )}
-                  {step === 2 && (
-                    <Button
-                      size="sm"
-                      disabled={
-                        !agentName.trim() || loading || adapterEnvLoading
-                      }
-                      onClick={handleStep2Next}
-                    >
-                      {loading ? (
-                        <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                      ) : (
-                        <ArrowRight className="h-3.5 w-3.5 mr-1" />
-                      )}
-                      {loading ? "Creating..." : "Next"}
-                    </Button>
-                  )}
-                  {step === 3 && (
-                    <Button
-                      size="sm"
-                      disabled={!taskTitle.trim() || loading}
-                      onClick={handleStep3Next}
-                    >
-                      {loading ? (
-                        <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                      ) : (
-                        <ArrowRight className="h-3.5 w-3.5 mr-1" />
-                      )}
-                      {loading ? "Creating..." : "Next"}
-                    </Button>
-                  )}
-                  {step === 4 && (
-                    <Button size="sm" disabled={loading} onClick={handleLaunch}>
-                      {loading ? (
-                        <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                      ) : (
-                        <ArrowRight className="h-3.5 w-3.5 mr-1" />
-                      )}
-                      {loading ? "Creating..." : "Create & Open Issue"}
-                    </Button>
-                  )}
-                </div>
-              </div>
+            {/* Save Draft button */}
+            <div className="px-3 py-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={handleClose}
+              >
+                Save Draft
+              </Button>
             </div>
           </div>
 
-          {/* Right half — ASCII art (hidden on mobile) */}
-          <div
-            className={cn(
-              "hidden md:block overflow-hidden bg-surface-container-high transition-[width,opacity] duration-500 ease-in-out",
-              step === 1 ? "w-1/2 opacity-100" : "w-0 opacity-0"
-            )}
-          >
-            <AsciiArtAnimation />
+          {/* ───── Main content area ───── */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Close button */}
+            <button
+              onClick={handleClose}
+              className="absolute top-4 right-4 z-10 rounded-sm p-1.5 text-muted-foreground/60 hover:text-foreground transition-colors"
+            >
+              <X className="h-5 w-5" />
+              <span className="sr-only">Close</span>
+            </button>
+
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="max-w-3xl mx-auto px-8 py-10">
+                {/* Step header */}
+                <div className="mb-8">
+                  <span className="inline-block rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground mb-3">
+                    Step {step} of 4
+                  </span>
+                  <h2 className="text-3xl font-bold text-foreground">{stepMeta[step].title}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{stepMeta[step].description}</p>
+                </div>
+
+                {/* ── Step 1: Company ── */}
+                {step === 1 && (
+                  <div className="space-y-5 max-w-md">
+                    <div className="mt-3 group">
+                      <label
+                        className={cn(
+                          "text-xs mb-1 block transition-colors",
+                          companyName.trim()
+                            ? "text-foreground"
+                            : "text-muted-foreground group-focus-within:text-foreground"
+                        )}
+                      >
+                        Company name
+                      </label>
+                      <input
+                        className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                        placeholder="Acme Corp"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="group">
+                      <label
+                        className={cn(
+                          "text-xs mb-1 block transition-colors",
+                          companyGoal.trim()
+                            ? "text-foreground"
+                            : "text-muted-foreground group-focus-within:text-foreground"
+                        )}
+                      >
+                        Mission / goal (optional)
+                      </label>
+                      <textarea
+                        className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50 resize-none min-h-[60px]"
+                        placeholder="What is this company trying to achieve?"
+                        value={companyGoal}
+                        onChange={(e) => setCompanyGoal(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Step 2: Agent ── */}
+                {step === 2 && (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Left column — agent form + adapter grid */}
+                    <div className="lg:col-span-8 space-y-6">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">
+                          Agent name
+                        </label>
+                        <input
+                          className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                          placeholder="CEO"
+                          value={agentName}
+                          onChange={(e) => setAgentName(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+
+                      {/* Adapter type cards — 2x4 grid */}
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-2 block">
+                          Adapter type
+                        </label>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          {recommendedAdapters.map((opt) => (
+                            <button
+                              key={opt.type}
+                              className={cn(
+                                "flex flex-col items-center gap-2 rounded-xl border p-4 text-xs transition-colors relative",
+                                adapterType === opt.type
+                                  ? "border-primary ring-2 ring-primary bg-accent"
+                                  : "border-border hover:bg-accent/50"
+                              )}
+                              onClick={() => {
+                                const nextType = opt.type;
+                                setAdapterType(nextType);
+                                if (nextType === "codex_local" && !model) {
+                                  setModel(DEFAULT_CODEX_LOCAL_MODEL);
+                                }
+                                if (nextType !== "codex_local") {
+                                  setModel("");
+                                }
+                              }}
+                            >
+                              {opt.recommended && (
+                                <span className="absolute -top-1.5 right-1.5 bg-green-500 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none">
+                                  Recommended
+                                </span>
+                              )}
+                              <opt.icon className="h-5 w-5" />
+                              <span className="font-medium">{opt.label}</span>
+                              <span className="text-muted-foreground text-[10px] text-center">
+                                {opt.description}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+
+                        <button
+                          className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                          onClick={() => setShowMoreAdapters((v) => !v)}
+                        >
+                          <ChevronDown
+                            className={cn(
+                              "h-3 w-3 transition-transform",
+                              showMoreAdapters ? "rotate-0" : "-rotate-90"
+                            )}
+                          />
+                          More Agent Adapter Types
+                        </button>
+
+                        {showMoreAdapters && (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                            {moreAdapters.map((opt) => (
+                              <button
+                                key={opt.type}
+                                disabled={!!opt.comingSoon}
+                                className={cn(
+                                  "flex flex-col items-center gap-2 rounded-xl border p-4 text-xs transition-colors relative",
+                                  opt.comingSoon
+                                    ? "border-border opacity-40 cursor-not-allowed"
+                                    : adapterType === opt.type
+                                    ? "border-primary ring-2 ring-primary bg-accent"
+                                    : "border-border hover:bg-accent/50"
+                                )}
+                                onClick={() => {
+                                  if (opt.comingSoon) return;
+                                  const nextType = opt.type;
+                                  setAdapterType(nextType);
+                                  if (nextType === "gemini_local" && !model) {
+                                    setModel(DEFAULT_GEMINI_LOCAL_MODEL);
+                                    return;
+                                  }
+                                  if (nextType === "cursor" && !model) {
+                                    setModel(DEFAULT_CURSOR_LOCAL_MODEL);
+                                    return;
+                                  }
+                                  if (nextType === "opencode_local") {
+                                    if (!model.includes("/")) {
+                                      setModel("");
+                                    }
+                                    return;
+                                  }
+                                  setModel("");
+                                }}
+                              >
+                                <opt.icon className="h-5 w-5" />
+                                <span className="font-medium">{opt.label}</span>
+                                <span className="text-muted-foreground text-[10px] text-center">
+                                  {opt.comingSoon
+                                    ? opt.disabledLabel ?? "Coming soon"
+                                    : opt.description}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Model selector for local adapters */}
+                      {isLocalAdapter && (
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">
+                              Model
+                            </label>
+                            <Popover
+                              open={modelOpen}
+                              onOpenChange={(next) => {
+                                setModelOpen(next);
+                                if (!next) setModelSearch("");
+                              }}
+                            >
+                              <PopoverTrigger asChild>
+                                <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm hover:bg-accent/50 transition-colors w-full justify-between">
+                                  <span
+                                    className={cn(
+                                      !model && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {selectedModel
+                                      ? selectedModel.label
+                                      : model ||
+                                        (adapterType === "opencode_local"
+                                          ? "Select model (required)"
+                                          : "Default")}
+                                  </span>
+                                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-[var(--radix-popover-trigger-width)] p-1"
+                                align="start"
+                              >
+                                <input
+                                  className="w-full px-2 py-1.5 text-xs bg-transparent outline-none border-b border-border mb-1 placeholder:text-muted-foreground/50"
+                                  placeholder="Search models..."
+                                  value={modelSearch}
+                                  onChange={(e) => setModelSearch(e.target.value)}
+                                  autoFocus
+                                />
+                                {adapterType !== "opencode_local" && (
+                                  <button
+                                    className={cn(
+                                      "flex items-center gap-2 w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
+                                      !model && "bg-accent"
+                                    )}
+                                    onClick={() => {
+                                      setModel("");
+                                      setModelOpen(false);
+                                    }}
+                                  >
+                                    Default
+                                  </button>
+                                )}
+                                <div className="max-h-[240px] overflow-y-auto">
+                                  {groupedModels.map((group) => (
+                                    <div
+                                      key={group.provider}
+                                      className="mb-1 last:mb-0"
+                                    >
+                                      {adapterType === "opencode_local" && (
+                                        <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                                          {group.provider} ({group.entries.length})
+                                        </div>
+                                      )}
+                                      {group.entries.map((m) => (
+                                        <button
+                                          key={m.id}
+                                          className={cn(
+                                            "flex items-center w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
+                                            m.id === model && "bg-accent"
+                                          )}
+                                          onClick={() => {
+                                            setModel(m.id);
+                                            setModelOpen(false);
+                                          }}
+                                        >
+                                          <span
+                                            className="block w-full text-left truncate"
+                                            title={m.id}
+                                          >
+                                            {adapterType === "opencode_local"
+                                              ? extractModelName(m.id)
+                                              : m.label}
+                                          </span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  ))}
+                                </div>
+                                {filteredModels.length === 0 && (
+                                  <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                                    No models discovered.
+                                  </p>
+                                )}
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* URL field for HTTP / gateway adapters */}
+                      {(adapterType === "http" ||
+                        adapterType === "openclaw_gateway") && (
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">
+                            {adapterType === "openclaw_gateway"
+                              ? "Gateway URL"
+                              : "Webhook URL"}
+                          </label>
+                          <input
+                            className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm font-mono outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                            placeholder={
+                              adapterType === "openclaw_gateway"
+                                ? "ws://127.0.0.1:18789"
+                                : "https://..."
+                            }
+                            value={url}
+                            onChange={(e) => setUrl(e.target.value)}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right column — System Status card */}
+                    {isLocalAdapter && (
+                      <div className="lg:col-span-4">
+                        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3 sticky top-10">
+                          <div className="flex items-center justify-between gap-2">
+                            <h4 className="text-sm font-semibold text-foreground">System Status</h4>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2.5 text-xs"
+                              disabled={adapterEnvLoading}
+                              onClick={() => void runAdapterEnvironmentTest()}
+                            >
+                              {adapterEnvLoading ? "Testing..." : "Test now"}
+                            </Button>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            Runs a live probe that asks the adapter CLI to respond with hello.
+                          </p>
+
+                          {adapterEnvError && (
+                            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-2.5 py-2 text-[11px] text-destructive">
+                              {adapterEnvError}
+                            </div>
+                          )}
+
+                          {adapterEnvResult &&
+                          adapterEnvResult.status === "pass" ? (
+                            <div className="flex items-center gap-2 rounded-md border border-green-300 dark:border-green-500/40 bg-green-50 dark:bg-green-500/10 px-3 py-2 text-xs text-green-700 dark:text-green-300 animate-in fade-in slide-in-from-bottom-1 duration-300">
+                              <Check className="h-3.5 w-3.5 shrink-0" />
+                              <span className="font-medium">Passed</span>
+                            </div>
+                          ) : adapterEnvResult ? (
+                            <AdapterEnvironmentResult result={adapterEnvResult} />
+                          ) : null}
+
+                          {shouldSuggestUnsetAnthropicApiKey && (
+                            <div className="rounded-md border border-amber-300/60 bg-amber-50/40 px-2.5 py-2 space-y-2">
+                              <p className="text-[11px] text-amber-900/90 leading-relaxed">
+                                Claude failed while{" "}
+                                <span className="font-mono">ANTHROPIC_API_KEY</span>{" "}
+                                is set. You can clear it in this CEO adapter config
+                                and retry the probe.
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2.5 text-xs"
+                                disabled={
+                                  adapterEnvLoading || unsetAnthropicLoading
+                                }
+                                onClick={() => void handleUnsetAnthropicApiKey()}
+                              >
+                                {unsetAnthropicLoading
+                                  ? "Retrying..."
+                                  : "Unset ANTHROPIC_API_KEY"}
+                              </Button>
+                            </div>
+                          )}
+
+                          {adapterEnvResult && adapterEnvResult.status === "fail" && (
+                            <div className="rounded-md border border-border/70 bg-muted/20 px-2.5 py-2 text-[11px] space-y-1.5">
+                              <p className="font-medium">Manual debug</p>
+                              <p className="text-muted-foreground font-mono break-all">
+                                {adapterType === "cursor"
+                                  ? `${effectiveAdapterCommand} -p --mode ask --output-format json \"Respond with hello.\"`
+                                  : adapterType === "codex_local"
+                                  ? `${effectiveAdapterCommand} exec --json -`
+                                  : adapterType === "gemini_local"
+                                    ? `${effectiveAdapterCommand} --output-format json "Respond with hello."`
+                                  : adapterType === "opencode_local"
+                                    ? `${effectiveAdapterCommand} run --format json "Respond with hello."`
+                                  : `${effectiveAdapterCommand} --print - --output-format stream-json --verbose`}
+                              </p>
+                              <p className="text-muted-foreground">
+                                Prompt:{" "}
+                                <span className="font-mono">Respond with hello.</span>
+                              </p>
+                              {adapterType === "cursor" ||
+                              adapterType === "codex_local" ||
+                              adapterType === "gemini_local" ||
+                              adapterType === "opencode_local" ? (
+                                <p className="text-muted-foreground">
+                                  If auth fails, set{" "}
+                                  <span className="font-mono">
+                                    {adapterType === "cursor"
+                                      ? "CURSOR_API_KEY"
+                                      : adapterType === "gemini_local"
+                                        ? "GEMINI_API_KEY"
+                                        : "OPENAI_API_KEY"}
+                                  </span>{" "}
+                                  in env or run{" "}
+                                  <span className="font-mono">
+                                    {adapterType === "cursor"
+                                      ? "agent login"
+                                      : adapterType === "codex_local"
+                                        ? "codex login"
+                                        : adapterType === "gemini_local"
+                                          ? "gemini auth"
+                                          : "opencode auth login"}
+                                  </span>
+                                  .
+                                </p>
+                              ) : (
+                                <p className="text-muted-foreground">
+                                  If login is required, run{" "}
+                                  <span className="font-mono">claude login</span>{" "}
+                                  and retry.
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ── Step 3: Task ── */}
+                {step === 3 && (
+                  <div className="space-y-5 max-w-md">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">
+                        Task title
+                      </label>
+                      <input
+                        className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                        placeholder="e.g. Research competitor pricing"
+                        value={taskTitle}
+                        onChange={(e) => setTaskTitle(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">
+                        Description (optional)
+                      </label>
+                      <textarea
+                        ref={textareaRef}
+                        className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50 resize-none min-h-[120px] max-h-[300px] overflow-y-auto"
+                        placeholder="Add more detail about what the agent should do..."
+                        value={taskDescription}
+                        onChange={(e) => setTaskDescription(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Step 4: Launch ── */}
+                {step === 4 && (
+                  <div className="space-y-5 max-w-md">
+                    <div className="rounded-xl border border-border divide-y divide-border">
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {companyName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Company</p>
+                        </div>
+                        <Check className="h-4 w-4 text-green-500 shrink-0" />
+                      </div>
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        <Bot className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {agentName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {getUIAdapter(adapterType).label}
+                          </p>
+                        </div>
+                        <Check className="h-4 w-4 text-green-500 shrink-0" />
+                      </div>
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        <ListTodo className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {taskTitle}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Task</p>
+                        </div>
+                        <Check className="h-4 w-4 text-green-500 shrink-0" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error */}
+                {error && (
+                  <div className="mt-3">
+                    <p className="text-xs text-destructive">{error}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ───── Footer ───── */}
+            <div className="border-t border-border px-8 py-4 flex items-center justify-between">
+              <div>
+                {step > 1 && step > (onboardingOptions.initialStep ?? 1) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setStep((step - 1) as Step)}
+                    disabled={loading}
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+                    Back
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {step === 1 && (
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground"
+                    disabled={!companyName.trim() || loading}
+                    onClick={handleStep1Next}
+                  >
+                    {loading ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    ) : (
+                      <ArrowRight className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    {loading ? "Creating..." : "Next"}
+                  </Button>
+                )}
+                {step === 2 && (
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground"
+                    disabled={
+                      !agentName.trim() || loading || adapterEnvLoading
+                    }
+                    onClick={handleStep2Next}
+                  >
+                    {loading ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    ) : (
+                      <ArrowRight className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    {loading ? "Creating..." : "Next"}
+                  </Button>
+                )}
+                {step === 3 && (
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground"
+                    disabled={!taskTitle.trim() || loading}
+                    onClick={handleStep3Next}
+                  >
+                    {loading ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    ) : (
+                      <ArrowRight className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    {loading ? "Creating..." : "Next"}
+                  </Button>
+                )}
+                {step === 4 && (
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground"
+                    disabled={loading}
+                    onClick={handleLaunch}
+                  >
+                    {loading ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    ) : (
+                      <ArrowRight className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    {loading ? "Creating..." : "Create & Open Issue"}
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </DialogPortal>
