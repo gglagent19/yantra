@@ -45,7 +45,9 @@ async function authPost(path: string, body: Record<string, unknown>) {
 
 export const authApi = {
   getSession: async (): Promise<AuthSession | null> => {
-    const res = await fetch("/api/auth/get-session", {
+    const stored = localStorage.getItem("yantra.serverUrl");
+    const base = stored ? `${stored}/api` : "/api";
+    const res = await fetch(`${base}/auth/get-session`, {
       credentials: "include",
       headers: { Accept: "application/json" },
     });

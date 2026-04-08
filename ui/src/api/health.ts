@@ -28,7 +28,9 @@ export type HealthStatus = {
 
 export const healthApi = {
   get: async (): Promise<HealthStatus> => {
-    const res = await fetch("/api/health", {
+    const stored = localStorage.getItem("yantra.serverUrl");
+    const base = stored ? `${stored}/api` : "/api";
+    const res = await fetch(`${base}/health`, {
       credentials: "include",
       headers: { Accept: "application/json" },
     });
