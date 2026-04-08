@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PatchInstanceGeneralSettings } from "@yantra/shared";
-import { LogOut, SlidersHorizontal } from "lucide-react";
+import { Key, LogOut, SlidersHorizontal } from "lucide-react";
 import { authApi } from "@/api/auth";
 import { instanceSettingsApi } from "@/api/instanceSettings";
 import { Button } from "../components/ui/button";
@@ -67,6 +67,10 @@ export function InstanceGeneralSettings() {
   const censorUsernameInLogs = generalQuery.data?.censorUsernameInLogs === true;
   const keyboardShortcuts = generalQuery.data?.keyboardShortcuts === true;
   const feedbackDataSharingPreference = generalQuery.data?.feedbackDataSharingPreference ?? "prompt";
+  const currentApiKey = generalQuery.data?.anthropicApiKey ?? "";
+  const isApiKeyConfigured = currentApiKey.length > 0 && currentApiKey !== "";
+  const [apiKeyInput, setApiKeyInput] = useState("");
+  const apiKeyInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -120,6 +124,60 @@ export function InstanceGeneralSettings() {
             disabled={updateGeneralMutation.isPending}
             aria-label="Toggle keyboard shortcuts"
           />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-5">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Key className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold">Anthropic API Key</h2>
+            {isApiKeyConfigured && (
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                Active
+              </span>
+            )}
+          </div>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Set a global Anthropic API key so all Claude agents use the API instead of Claude Code
+            subscription limits. Agents with their own key configured will use theirs instead.
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              ref={apiKeyInputRef}
+              type="password"
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              placeholder={isApiKeyConfigured ? "sk-***configured*** (enter new key to replace)" : "sk-ant-..."}
+              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={updateGeneralMutation.isPending || !apiKeyInput.trim()}
+              onClick={() => {
+                updateGeneralMutation.mutate(
+                  { anthropicApiKey: apiKeyInput.trim() },
+                  { onSuccess: () => setApiKeyInput("") },
+                );
+              }}
+            >
+              {updateGeneralMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+            {isApiKeyConfigured && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={updateGeneralMutation.isPending}
+                onClick={() => {
+                  updateGeneralMutation.mutate({ anthropicApiKey: "" });
+                  setApiKeyInput("");
+                }}
+              >
+                Remove
+              </Button>
+            )}
+          </div>
         </div>
       </section>
 

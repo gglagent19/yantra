@@ -2456,6 +2456,26 @@ export function heartbeatService(db: Db) {
       projectEnv: projectContext?.env ?? null,
       secretsSvc,
     });
+
+    // Auto-inject ANTHROPIC_API_KEY from instance settings for claude_local agents
+    // so they use the Anthropic API instead of Claude Code subscription limits
+    if (agent.adapterType === "claude_local") {
+      const envObj = parseObject(resolvedConfig.env);
+      const hasAgentKey =
+        (typeof envObj.ANTHROPIC_API_KEY === "string" && envObj.ANTHROPIC_API_KEY.trim().length > 0) ||
+        (typeof process.env.ANTHROPIC_API_KEY === "string" && process.env.ANTHROPIC_API_KEY.trim().length > 0);
+      if (!hasAgentKey) {
+        const instanceApiKey = await instanceSettings.getAnthropicApiKey();
+        if (instanceApiKey) {
+          resolvedConfig.env = {
+            ...envObj,
+            ANTHROPIC_API_KEY: instanceApiKey,
+          };
+          secretKeys.add("ANTHROPIC_API_KEY");
+        }
+      }
+    }
+
     const runtimeSkillEntries = await companySkills.listRuntimeSkillEntries(agent.companyId);
     const runtimeConfig = {
       ...resolvedConfig,

@@ -22,12 +22,14 @@ function normalizeGeneralSettings(raw: unknown): InstanceGeneralSettings {
       keyboardShortcuts: parsed.data.keyboardShortcuts ?? false,
       feedbackDataSharingPreference:
         parsed.data.feedbackDataSharingPreference ?? DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
+      anthropicApiKey: parsed.data.anthropicApiKey ?? "",
     };
   }
   return {
     censorUsernameInLogs: false,
     keyboardShortcuts: false,
     feedbackDataSharingPreference: DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
+    anthropicApiKey: "",
   };
 }
 
@@ -132,6 +134,12 @@ export function instanceSettingsService(db: Db) {
         .where(eq(instanceSettings.id, current.id))
         .returning();
       return toInstanceSettings(updated ?? current);
+    },
+
+    getAnthropicApiKey: async (): Promise<string> => {
+      const row = await getOrCreateRow();
+      const general = normalizeGeneralSettings(row.general);
+      return general.anthropicApiKey;
     },
 
     listCompanyIds: async (): Promise<string[]> =>

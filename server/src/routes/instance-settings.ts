@@ -26,7 +26,12 @@ export function instanceSettingsRoutes(db: Db) {
     if (req.actor.type !== "board") {
       throw forbidden("Board access required");
     }
-    res.json(await svc.getGeneral());
+    const general = await svc.getGeneral();
+    // Mask the API key for the frontend — show only presence, not the value
+    res.json({
+      ...general,
+      anthropicApiKey: general.anthropicApiKey ? "sk-***configured***" : "",
+    });
   });
 
   router.patch(

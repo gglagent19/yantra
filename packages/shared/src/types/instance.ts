@@ -4,6 +4,7 @@ export interface InstanceGeneralSettings {
   censorUsernameInLogs: boolean;
   keyboardShortcuts: boolean;
   feedbackDataSharingPreference: FeedbackDataSharingPreference;
+  anthropicApiKey: string;
 }
 
 export interface InstanceExperimentalSettings {
