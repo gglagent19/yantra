@@ -63,6 +63,7 @@ import {
   type SessionCompactionPolicy,
 } from "@yantra/adapter-utils";
 import { readYantraSkillSyncPreference } from "@yantra/adapter-utils/server-utils";
+import { tokenOptimizerService } from "./token-optimizer.js";
 
 const MAX_LIVE_LOG_CHUNK_BYTES = 8 * 1024;
 const HEARTBEAT_MAX_CONCURRENT_RUNS_DEFAULT = 1;
@@ -1105,6 +1106,7 @@ export function heartbeatService(db: Db) {
   const runLogStore = getRunLogStore();
   const secretsSvc = secretService(db);
   const companySkills = companySkillService(db);
+  const tokenOptimizer = tokenOptimizerService(db);
   const issuesSvc = issueService(db);
   const executionWorkspacesSvc = executionWorkspaceService(db);
   const workspaceOperationsSvc = workspaceOperationService(db);
@@ -2979,6 +2981,36 @@ export function heartbeatService(db: Db) {
           "local agent jwt secret missing or invalid; running without injected YANTRA_API_KEY",
         );
       }
+      // --- Token optimizer: inject hints for repeated tasks ---
+      const optimizerTaskKey = readNonEmptyString(context.taskKey) ?? readNonEmptyString(context.issueId) ?? null;
+      const optimizerIssueId = readNonEmptyString(context.issueId) ?? null;
+      let optimizationHint: Awaited<ReturnType<typeof tokenOptimizer.getOptimizationHint>> = null;
+      try {
+        optimizationHint = await tokenOptimizer.getOptimizationHint({
+          agentId: agent.id,
+          companyId: agent.companyId,
+          taskKey: optimizerTaskKey,
+          issueId: optimizerIssueId,
+        });
+        if (optimizationHint) {
+          Object.assign(context, tokenOptimizer.buildOptimizationContext(optimizationHint));
+          await appendRunEvent(currentRun, seq++, {
+            eventType: "optimization.hint",
+            stream: "system",
+            level: "info",
+            message: `Repeated task (run #${optimizationHint.previousRunCount + 1}) — previous best: ${optimizationHint.bestTokens} tokens`,
+            payload: {
+              previousRunCount: optimizationHint.previousRunCount,
+              avgTokens: optimizationHint.avgTokens,
+              bestTokens: optimizationHint.bestTokens,
+            },
+          });
+        }
+      } catch (err) {
+        logger.warn({ agentId: agent.id, runId: run.id, err }, "token optimizer hint failed");
+      }
+      const executionStartMs = Date.now();
+
       const adapterResult = await adapter.execute({
         runId: run.id,
         agent,
@@ -3066,6 +3098,46 @@ export function heartbeatService(db: Db) {
         outcome = "succeeded";
       } else {
         outcome = "failed";
+      }
+
+      // --- Token optimizer: record metrics and emit optimization result ---
+      const executionDurationMs = Date.now() - executionStartMs;
+      try {
+        const inputTokens = normalizedUsage?.inputTokens ?? 0;
+        const outputTokens = normalizedUsage?.outputTokens ?? 0;
+        const optimizationResult = await tokenOptimizer.recordRunAndCalculate({
+          agentId: agent.id,
+          companyId: agent.companyId,
+          runId: run.id,
+          taskKey: optimizerTaskKey,
+          issueId: optimizerIssueId,
+          inputTokens,
+          outputTokens,
+          durationMs: executionDurationMs,
+        });
+        await appendRunEvent(currentRun, seq++, {
+          eventType: "optimization.result",
+          stream: "system",
+          level: "info",
+          message: optimizationResult.runNumber > 1
+            ? optimizationResult.improved
+              ? `Run #${optimizationResult.runNumber}: ${optimizationResult.currentTokens} tokens (${Math.abs(optimizationResult.tokensSavedPercent)}% less, ${Math.round(Math.abs(optimizationResult.timeSavedMs) / 1000)}s faster)`
+              : `Run #${optimizationResult.runNumber}: ${optimizationResult.currentTokens} tokens used`
+            : `First run: ${optimizationResult.currentTokens} tokens in ${Math.round(executionDurationMs / 1000)}s`,
+          payload: {
+            runNumber: optimizationResult.runNumber,
+            currentTokens: optimizationResult.currentTokens,
+            currentDurationMs: optimizationResult.currentDurationMs,
+            previousAvgTokens: optimizationResult.previousAvgTokens,
+            tokensSaved: optimizationResult.tokensSaved,
+            tokensSavedPercent: optimizationResult.tokensSavedPercent,
+            timeSavedMs: optimizationResult.timeSavedMs,
+            timeSavedPercent: optimizationResult.timeSavedPercent,
+            improved: optimizationResult.improved,
+          },
+        });
+      } catch (err) {
+        logger.warn({ agentId: agent.id, runId: run.id, err }, "token optimizer recording failed");
       }
 
       let logSummary: { bytes: number; sha256?: string; compressed: boolean } | null = null;

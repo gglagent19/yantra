@@ -10,8 +10,11 @@ import {
   GitCompare,
   Sparkles,
   TerminalSquare,
+  TrendingDown,
+  TrendingUp,
   User,
   Wrench,
+  Zap,
 } from "lucide-react";
 
 export type TranscriptMode = "nice" | "raw";
@@ -127,6 +130,18 @@ type TranscriptBlock =
       type: "skill_activated";
       ts: string;
       skills: Array<{ name: string; description: string | null }>;
+    }
+  | {
+      type: "optimization";
+      ts: string;
+      variant: "hint" | "result";
+      message: string;
+      runNumber: number;
+      currentTokens?: number;
+      previousAvgTokens?: number;
+      tokensSaved?: number;
+      tokensSavedPercent?: number;
+      improved?: boolean;
     };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -325,6 +340,29 @@ function parseSkillActivation(text: string): Array<{ name: string; description: 
   const names = match[1]!.split(",").map((s) => s.trim()).filter(Boolean);
   if (names.length === 0) return null;
   return names.map((name) => ({ name, description: null }));
+}
+
+function parseOptimizationEvent(text: string): { variant: "hint" | "result"; message: string; runNumber: number; currentTokens?: number; previousAvgTokens?: number; tokensSaved?: number; tokensSavedPercent?: number; improved?: boolean } | null {
+  const hintMatch = text.match(/^Repeated task \(run #(\d+)\)/i);
+  if (hintMatch) {
+    return { variant: "hint", message: text, runNumber: parseInt(hintMatch[1]!, 10) };
+  }
+  const resultMatch = text.match(/^(?:Run #(\d+)|First run):\s*(\d[\d,]*)\s*tokens/i);
+  if (resultMatch) {
+    const runNumber = resultMatch[1] ? parseInt(resultMatch[1], 10) : 1;
+    const currentTokens = parseInt(resultMatch[2]!.replace(/,/g, ""), 10);
+    const lessMatch = text.match(/(\d+)% less/);
+    const tokensSavedPercent = lessMatch ? parseInt(lessMatch[1]!, 10) : 0;
+    return {
+      variant: "result",
+      message: text,
+      runNumber,
+      currentTokens,
+      tokensSavedPercent,
+      improved: tokensSavedPercent > 0,
+    };
+  }
+  return null;
 }
 
 function shouldHideNiceModeStderr(text: string): boolean {
@@ -561,6 +599,15 @@ export function normalizeTranscript(entries: TranscriptEntry[], streaming: boole
 
     if (entry.kind === "system") {
       if (compactWhitespace(entry.text).toLowerCase() === "turn started") {
+        continue;
+      }
+      const optimization = parseOptimizationEvent(entry.text.trim());
+      if (optimization) {
+        blocks.push({
+          type: "optimization",
+          ts: entry.ts,
+          ...optimization,
+        });
         continue;
       }
       const skillActivation = parseSkillActivation(entry.text.trim());
@@ -1114,6 +1161,68 @@ function TranscriptActivityRow({
   );
 }
 
+function TranscriptOptimizationRow({
+  block,
+  density,
+}: {
+  block: Extract<TranscriptBlock, { type: "optimization" }>;
+  density: TranscriptDensity;
+}) {
+  const compact = density === "compact";
+  const isResult = block.variant === "result";
+  const improved = block.improved === true;
+
+  if (block.variant === "hint") {
+    return (
+      <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-2.5">
+        <div className="flex items-center gap-2">
+          <Zap className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+          <span className={cn(
+            "font-medium text-amber-700 dark:text-amber-400",
+            compact ? "text-[10px]" : "text-[11px]",
+          )}>
+            {block.message}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn(
+      "rounded-xl border p-2.5",
+      improved
+        ? "border-emerald-500/20 bg-emerald-500/[0.06]"
+        : "border-sky-500/20 bg-sky-500/[0.06]",
+    )}>
+      <div className="flex items-center gap-2">
+        {improved ? (
+          <TrendingDown className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+        ) : (
+          <TrendingUp className="h-3.5 w-3.5 shrink-0 text-sky-500" />
+        )}
+        <span className={cn(
+          "font-medium",
+          improved ? "text-emerald-700 dark:text-emerald-400" : "text-sky-700 dark:text-sky-400",
+          compact ? "text-[10px]" : "text-[11px]",
+        )}>
+          {block.message}
+        </span>
+      </div>
+      {isResult && block.runNumber > 1 && improved && block.tokensSavedPercent && block.tokensSavedPercent > 0 && (
+        <div className={cn(
+          "mt-1.5 flex items-center gap-3",
+          compact ? "text-[9px]" : "text-[10px]",
+        )}>
+          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-1.5 py-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
+            {block.tokensSavedPercent}% fewer tokens
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TranscriptSkillActivatedRow({
   block,
   density,
@@ -1510,6 +1619,7 @@ export function RunTranscriptView({
           {block.type === "activity" && <TranscriptActivityRow block={block} density={density} />}
           {block.type === "event" && <TranscriptEventRow block={block} density={density} />}
           {block.type === "skill_activated" && <TranscriptSkillActivatedRow block={block} density={density} />}
+          {block.type === "optimization" && <TranscriptOptimizationRow block={block} density={density} />}
         </div>
       ))}
     </div>
