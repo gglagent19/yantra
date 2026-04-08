@@ -2458,18 +2458,19 @@ export function heartbeatService(db: Db) {
     });
 
     // Auto-inject ANTHROPIC_API_KEY from instance settings for claude_local agents
-    // so they use the Anthropic API instead of Claude Code subscription limits
+    // when "Use API" mode is enabled, so they use the Anthropic API instead of
+    // Claude Code subscription limits
     if (agent.adapterType === "claude_local") {
-      const envObj = parseObject(resolvedConfig.env);
-      const hasAgentKey =
-        (typeof envObj.ANTHROPIC_API_KEY === "string" && envObj.ANTHROPIC_API_KEY.trim().length > 0) ||
-        (typeof process.env.ANTHROPIC_API_KEY === "string" && process.env.ANTHROPIC_API_KEY.trim().length > 0);
-      if (!hasAgentKey) {
-        const instanceApiKey = await instanceSettings.getAnthropicApiKey();
-        if (instanceApiKey) {
+      const generalSettings = await instanceSettings.getGeneral();
+      if (generalSettings.useAnthropicApi) {
+        const envObj = parseObject(resolvedConfig.env);
+        const hasAgentKey =
+          (typeof envObj.ANTHROPIC_API_KEY === "string" && envObj.ANTHROPIC_API_KEY.trim().length > 0) ||
+          (typeof process.env.ANTHROPIC_API_KEY === "string" && process.env.ANTHROPIC_API_KEY.trim().length > 0);
+        if (!hasAgentKey && generalSettings.anthropicApiKey) {
           resolvedConfig.env = {
             ...envObj,
-            ANTHROPIC_API_KEY: instanceApiKey,
+            ANTHROPIC_API_KEY: generalSettings.anthropicApiKey,
           };
           secretKeys.add("ANTHROPIC_API_KEY");
         }

@@ -5,6 +5,7 @@ export interface InstanceGeneralSettings {
   keyboardShortcuts: boolean;
   feedbackDataSharingPreference: FeedbackDataSharingPreference;
   anthropicApiKey: string;
+  useAnthropicApi: boolean;
 }
 
 export interface InstanceExperimentalSettings {

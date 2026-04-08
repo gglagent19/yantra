@@ -1,5 +1,5 @@
 import { Link } from "@/lib/router";
-import { Menu } from "lucide-react";
+import { Menu, Zap, Cable } from "lucide-react";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useSidebar } from "../context/SidebarContext";
 import { useCompany } from "../context/CompanyContext";
@@ -13,8 +13,59 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Fragment, useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { instanceSettingsApi } from "@/api/instanceSettings";
+import { queryKeys } from "@/lib/queryKeys";
+import { cn } from "@/lib/utils";
 import { PluginSlotOutlet, usePluginSlots } from "@/plugins/slots";
 import { PluginLauncherOutlet, usePluginLaunchers } from "@/plugins/launchers";
+
+function ApiModeToggle() {
+  const queryClient = useQueryClient();
+  const { data: settings } = useQuery({
+    queryKey: queryKeys.instance.generalSettings,
+    queryFn: () => instanceSettingsApi.getGeneral(),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: (useApi: boolean) => instanceSettingsApi.updateGeneral({ useAnthropicApi: useApi }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.instance.generalSettings });
+    },
+  });
+
+  const useApi = settings?.useAnthropicApi === true;
+  const hasKey = Boolean(settings?.anthropicApiKey && settings.anthropicApiKey.length > 0);
+
+  if (!hasKey) return null;
+
+  return (
+    <button
+      type="button"
+      disabled={toggleMutation.isPending}
+      onClick={() => toggleMutation.mutate(!useApi)}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all",
+        useApi
+          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
+          : "border-border/70 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground",
+      )}
+      title={useApi ? "Using Anthropic API — click to switch to Claude Code subscription" : "Using Claude Code subscription — click to switch to Anthropic API"}
+    >
+      {useApi ? (
+        <>
+          <Zap className="h-3 w-3" />
+          <span>API</span>
+        </>
+      ) : (
+        <>
+          <Cable className="h-3 w-3" />
+          <span>Subscription</span>
+        </>
+      )}
+    </button>
+  );
+}
 
 type GlobalToolbarContext = { companyId: string | null; companyPrefix: string | null };
 
@@ -45,9 +96,12 @@ export function BreadcrumbBar() {
 
   const globalToolbarSlots = <GlobalToolbarPlugins context={globalToolbarSlotContext} />;
 
+  const apiModeToggle = <ApiModeToggle />;
+
   if (breadcrumbs.length === 0) {
     return (
-      <div className="border-b border-border/10 px-4 md:px-8 h-14 shrink-0 flex items-center justify-end bg-background/80 backdrop-blur-xl">
+      <div className="border-b border-border/10 px-4 md:px-8 h-14 shrink-0 flex items-center justify-end gap-2 bg-background/80 backdrop-blur-xl">
+        {apiModeToggle}
         {globalToolbarSlots}
       </div>
     );
@@ -75,6 +129,7 @@ export function BreadcrumbBar() {
             {breadcrumbs[0].label}
           </h1>
         </div>
+        {apiModeToggle}
         {globalToolbarSlots}
       </div>
     );
@@ -109,6 +164,7 @@ export function BreadcrumbBar() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
+      {apiModeToggle}
       {globalToolbarSlots}
     </div>
   );

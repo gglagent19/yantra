@@ -23,6 +23,7 @@ function normalizeGeneralSettings(raw: unknown): InstanceGeneralSettings {
       feedbackDataSharingPreference:
         parsed.data.feedbackDataSharingPreference ?? DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
       anthropicApiKey: parsed.data.anthropicApiKey ?? "",
+      useAnthropicApi: parsed.data.useAnthropicApi ?? false,
     };
   }
   return {
@@ -30,6 +31,7 @@ function normalizeGeneralSettings(raw: unknown): InstanceGeneralSettings {
     keyboardShortcuts: false,
     feedbackDataSharingPreference: DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
     anthropicApiKey: "",
+    useAnthropicApi: false,
   };
 }
 
