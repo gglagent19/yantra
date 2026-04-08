@@ -21,7 +21,10 @@ import { ActivityRow } from "../components/ActivityRow";
 import { Identity } from "../components/Identity";
 import { timeAgo } from "../lib/timeAgo";
 import { cn, formatCents, formatTokens } from "../lib/utils";
-import { Bot, CircleDot, Cpu, ShieldCheck, LayoutDashboard, PauseCircle, Key, Eye, EyeOff, Check, Loader2 } from "lucide-react";
+import { Bot, Cable, Chrome, CircleDot, Cpu, Plus, Plug, Server, ShieldCheck, LayoutDashboard, PauseCircle, Key, Eye, EyeOff, Check, Loader2, Trash2, Zap } from "lucide-react";
+import { instanceSettingsApi } from "../api/instanceSettings";
+import { ToggleSwitch } from "@/components/ui/toggle-switch";
+import type { McpServerConfig } from "@yantra/shared";
 import { ActiveAgentsPanel } from "../components/ActiveAgentsPanel";
 import { ChartCard, RunActivityChart, PriorityChart, IssueStatusChart, SuccessRateChart } from "../components/ActivityCharts";
 import { PageSkeleton } from "../components/PageSkeleton";
@@ -167,6 +170,176 @@ function AnthropicApiKeyCard({ companyId }: { companyId: string }) {
           </Button>
         </div>
       )}
+    </div>
+  );
+}
+
+function IntegrationsPanel() {
+  const queryClient = useQueryClient();
+  const { data: settings } = useQuery({
+    queryKey: queryKeys.instance.generalSettings,
+    queryFn: () => instanceSettingsApi.getGeneral(),
+  });
+  const updateMutation = useMutation({
+    mutationFn: instanceSettingsApi.updateGeneral,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.instance.generalSettings }),
+  });
+
+  const integrations = settings?.integrations ?? { mcpServers: [], chromeEnabled: false, apiConnected: false };
+  const hasApiKey = Boolean(settings?.anthropicApiKey && settings.anthropicApiKey.length > 0);
+  const useApi = settings?.useAnthropicApi === true;
+  const [newMcpName, setNewMcpName] = useState("");
+  const [newMcpCommand, setNewMcpCommand] = useState("");
+  const [newMcpArgs, setNewMcpArgs] = useState("");
+
+  return (
+    <div className="bg-card rounded-xl border border-border/10 shadow-sm p-6 space-y-4">
+      <div className="flex items-center gap-2 mb-1">
+        <Plug className="h-5 w-5 text-muted-foreground" />
+        <h3 className="text-sm font-bold font-headline text-foreground">Integrations</h3>
+      </div>
+
+      {/* API Mode Toggle */}
+      <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
+        <div className="flex items-center gap-3">
+          <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", useApi && hasApiKey ? "bg-emerald-500/15" : "bg-muted")}>
+            <Zap className={cn("h-4 w-4", useApi && hasApiKey ? "text-emerald-500" : "text-muted-foreground")} />
+          </div>
+          <div>
+            <div className="text-sm font-medium">Anthropic API</div>
+            <div className="text-[11px] text-muted-foreground">
+              {!hasApiKey ? "Add API key above to enable" : useApi ? "Using API — no session limits" : "Using Claude Code subscription"}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={cn(
+            "rounded-full px-2 py-0.5 text-[10px] font-medium",
+            useApi && hasApiKey ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground",
+          )}>
+            {useApi && hasApiKey ? "API" : "Subscription"}
+          </span>
+          {hasApiKey && (
+            <ToggleSwitch
+              checked={useApi}
+              onCheckedChange={() => updateMutation.mutate({ useAnthropicApi: !useApi })}
+              disabled={updateMutation.isPending}
+              aria-label="Toggle API mode"
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Chrome Toggle */}
+      <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
+        <div className="flex items-center gap-3">
+          <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", integrations.chromeEnabled ? "bg-sky-500/15" : "bg-muted")}>
+            <Chrome className={cn("h-4 w-4", integrations.chromeEnabled ? "text-sky-500" : "text-muted-foreground")} />
+          </div>
+          <div>
+            <div className="text-sm font-medium">Chrome Browser</div>
+            <div className="text-[11px] text-muted-foreground">Browser automation for all agents</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={cn(
+            "rounded-full px-2 py-0.5 text-[10px] font-medium",
+            integrations.chromeEnabled ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground",
+          )}>
+            {integrations.chromeEnabled ? "On" : "Off"}
+          </span>
+          <ToggleSwitch
+            checked={integrations.chromeEnabled}
+            onCheckedChange={() => updateMutation.mutate({ integrations: { ...integrations, chromeEnabled: !integrations.chromeEnabled } })}
+            disabled={updateMutation.isPending}
+            aria-label="Toggle Chrome"
+          />
+        </div>
+      </div>
+
+      {/* MCP Servers */}
+      <div className="rounded-lg border border-border p-3 space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", integrations.mcpServers.some((s) => s.enabled) ? "bg-violet-500/15" : "bg-muted")}>
+              <Server className={cn("h-4 w-4", integrations.mcpServers.some((s) => s.enabled) ? "text-violet-500" : "text-muted-foreground")} />
+            </div>
+            <div>
+              <div className="text-sm font-medium">MCP Servers</div>
+              <div className="text-[11px] text-muted-foreground">Connect external tools via MCP</div>
+            </div>
+          </div>
+          <span className={cn(
+            "rounded-full px-2 py-0.5 text-[10px] font-medium",
+            integrations.mcpServers.length > 0 ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground",
+          )}>
+            {integrations.mcpServers.filter((s) => s.enabled).length} active
+          </span>
+        </div>
+
+        {integrations.mcpServers.map((server, index) => (
+          <div key={index} className={cn(
+            "flex items-center justify-between gap-2 rounded-lg border px-3 py-2",
+            server.enabled ? "border-violet-500/20 bg-violet-500/[0.04]" : "border-border bg-muted/30",
+          )}>
+            <div className="min-w-0 flex-1">
+              <span className="text-xs font-medium">{server.name}</span>
+              <span className="ml-2 text-[10px] text-muted-foreground font-mono">{server.command}</span>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <ToggleSwitch
+                checked={server.enabled}
+                onCheckedChange={() => {
+                  const updated = [...integrations.mcpServers];
+                  updated[index] = { ...server, enabled: !server.enabled };
+                  updateMutation.mutate({ integrations: { ...integrations, mcpServers: updated } });
+                }}
+                disabled={updateMutation.isPending}
+                aria-label={`Toggle ${server.name}`}
+              />
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-destructive transition-colors"
+                onClick={() => {
+                  const updated = integrations.mcpServers.filter((_, i) => i !== index);
+                  updateMutation.mutate({ integrations: { ...integrations, mcpServers: updated } });
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        ))}
+
+        <div className="flex items-end gap-2">
+          <div className="flex-1">
+            <input type="text" value={newMcpName} onChange={(e) => setNewMcpName(e.target.value)} placeholder="Name"
+              className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none" />
+          </div>
+          <div className="flex-[2]">
+            <input type="text" value={newMcpCommand} onChange={(e) => setNewMcpCommand(e.target.value)} placeholder="Command (e.g. npx -y @anthropic/mcp-fs)"
+              className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none" />
+          </div>
+          <div className="flex-1">
+            <input type="text" value={newMcpArgs} onChange={(e) => setNewMcpArgs(e.target.value)} placeholder="Args (comma-sep)"
+              className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none" />
+          </div>
+          <Button variant="outline" size="sm" disabled={updateMutation.isPending || !newMcpName.trim() || !newMcpCommand.trim()}
+            onClick={() => {
+              const newServer: McpServerConfig = {
+                name: newMcpName.trim(), command: newMcpCommand.trim(),
+                args: newMcpArgs.trim() ? newMcpArgs.split(",").map((a) => a.trim()).filter(Boolean) : [],
+                enabled: true,
+              };
+              updateMutation.mutate(
+                { integrations: { ...integrations, mcpServers: [...integrations.mcpServers, newServer] } },
+                { onSuccess: () => { setNewMcpName(""); setNewMcpCommand(""); setNewMcpArgs(""); } },
+              );
+            }}>
+            <Plus className="h-3 w-3 mr-1" />Add
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -347,6 +520,8 @@ export function Dashboard() {
       )}
 
       <AnthropicApiKeyCard companyId={selectedCompanyId!} />
+
+      <IntegrationsPanel />
 
       <ActiveAgentsPanel companyId={selectedCompanyId!} />
 
