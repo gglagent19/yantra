@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { notFound, unprocessable } from "../errors.js";
-import { resolveHomeAwarePath, resolveYantraInstanceRoot } from "../home-paths.js";
+import { resolveHomeAwarePath, resolveManagedAgentMemoryDir, resolveYantraInstanceRoot } from "../home-paths.js";
 
 const ENTRY_FILE_DEFAULT = "AGENTS.md";
 const MODE_KEY = "instructionsBundleMode";
@@ -710,6 +710,20 @@ export function agentInstructionsService() {
     }
     if (!normalizedEntries.some(([relativePath]) => relativePath === entryFile)) {
       await fs.writeFile(resolvePathWithinRoot(rootPath, entryFile), "", "utf8");
+    }
+
+    // Create default memory folder for persistent agent memory
+    const memoryDir = resolveManagedAgentMemoryDir(agent.id, agent.companyId);
+    await fs.mkdir(memoryDir, { recursive: true });
+    const memoryIndexPath = path.resolve(memoryDir, "MEMORY.md");
+    try {
+      await fs.access(memoryIndexPath);
+    } catch {
+      await fs.writeFile(
+        memoryIndexPath,
+        `# Agent Memory\n\nThis folder stores persistent memory for this agent. Memories are organized by topic.\n`,
+        "utf8",
+      );
     }
 
     const adapterConfig = applyBundleConfig(asRecord(agent.adapterConfig), {

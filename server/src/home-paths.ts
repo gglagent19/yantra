@@ -90,6 +90,17 @@ export function resolveManagedProjectWorkspaceDir(input: {
   );
 }
 
+export function resolveManagedAgentMemoryDir(agentId: string, companyId: string): string {
+  return path.resolve(
+    resolveYantraInstanceRoot(),
+    "companies",
+    companyId,
+    "agents",
+    agentId,
+    "memory",
+  );
+}
+
 export function resolveHomeAwarePath(value: string): string {
   return path.resolve(expandHomePrefix(value));
 }

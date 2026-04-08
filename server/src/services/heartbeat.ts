@@ -31,7 +31,7 @@ import { getTelemetryClient } from "../telemetry.js";
 import { companySkillService } from "./company-skills.js";
 import { budgetService, type BudgetEnforcementScope } from "./budgets.js";
 import { secretService } from "./secrets.js";
-import { resolveDefaultAgentWorkspaceDir, resolveManagedProjectWorkspaceDir } from "../home-paths.js";
+import { resolveDefaultAgentWorkspaceDir, resolveManagedAgentMemoryDir, resolveManagedProjectWorkspaceDir } from "../home-paths.js";
 import { buildHeartbeatRunIssueComment, summarizeHeartbeatRunResultJson } from "./heartbeat-run-summary.js";
 import {
   buildWorkspaceReadyComment,
@@ -2672,6 +2672,11 @@ export function heartbeatService(db: Db) {
       })(),
     };
     context.yantraWorkspaces = resolvedWorkspace.workspaceHints;
+    // Ensure agent memory directory exists and pass path in context
+    const memoryDir = resolveManagedAgentMemoryDir(agent.id, agent.companyId);
+    await fs.mkdir(memoryDir, { recursive: true });
+    context.yantraMemoryDir = memoryDir;
+
     const runtimeServiceIntents = (() => {
       const runtimeConfig = parseObject(resolvedConfig.workspaceRuntime);
       return Array.isArray(runtimeConfig.services)
