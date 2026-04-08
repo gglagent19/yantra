@@ -16,6 +16,7 @@ const DEFAULT_SINGLETON_KEY = "default";
 
 function normalizeGeneralSettings(raw: unknown): InstanceGeneralSettings {
   const parsed = instanceGeneralSettingsSchema.safeParse(raw ?? {});
+  const defaultIntegrations = { mcpServers: [], chromeEnabled: false, apiConnected: false };
   if (parsed.success) {
     return {
       censorUsernameInLogs: parsed.data.censorUsernameInLogs ?? false,
@@ -24,6 +25,7 @@ function normalizeGeneralSettings(raw: unknown): InstanceGeneralSettings {
         parsed.data.feedbackDataSharingPreference ?? DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
       anthropicApiKey: parsed.data.anthropicApiKey ?? "",
       useAnthropicApi: parsed.data.useAnthropicApi ?? false,
+      integrations: parsed.data.integrations ?? defaultIntegrations,
     };
   }
   return {
@@ -32,6 +34,7 @@ function normalizeGeneralSettings(raw: unknown): InstanceGeneralSettings {
     feedbackDataSharingPreference: DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
     anthropicApiKey: "",
     useAnthropicApi: false,
+    integrations: defaultIntegrations,
   };
 }
 

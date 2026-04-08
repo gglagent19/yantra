@@ -2,6 +2,19 @@ import { z } from "zod";
 import { DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE } from "../types/feedback.js";
 import { feedbackDataSharingPreferenceSchema } from "./feedback.js";
 
+const mcpServerConfigSchema = z.object({
+  name: z.string(),
+  command: z.string(),
+  args: z.array(z.string()).default([]),
+  enabled: z.boolean().default(true),
+});
+
+const integrationSettingsSchema = z.object({
+  mcpServers: z.array(mcpServerConfigSchema).default([]),
+  chromeEnabled: z.boolean().default(false),
+  apiConnected: z.boolean().default(false),
+});
+
 export const instanceGeneralSettingsSchema = z.object({
   censorUsernameInLogs: z.boolean().default(false),
   keyboardShortcuts: z.boolean().default(false),
@@ -10,6 +23,7 @@ export const instanceGeneralSettingsSchema = z.object({
   ),
   anthropicApiKey: z.string().default(""),
   useAnthropicApi: z.boolean().default(false),
+  integrations: integrationSettingsSchema.default({}),
 }).strict();
 
 export const patchInstanceGeneralSettingsSchema = instanceGeneralSettingsSchema.partial();

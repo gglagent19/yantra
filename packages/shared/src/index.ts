@@ -181,6 +181,8 @@ export type {
   InstanceExperimentalSettings,
   InstanceGeneralSettings,
   InstanceSettings,
+  IntegrationSettings,
+  McpServerConfig,
   Agent,
   AgentAccessState,
   AgentChainOfCommandEntry,

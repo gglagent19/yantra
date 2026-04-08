@@ -2479,6 +2479,35 @@ export function heartbeatService(db: Db) {
       }
     }
 
+    // Auto-inject integration settings (MCP servers, chrome) for claude_local agents
+    if (agent.adapterType === "claude_local") {
+      const integrations = (await instanceSettings.getGeneral()).integrations;
+      if (integrations) {
+        // Inject chrome flag if globally enabled and not explicitly set
+        if (integrations.chromeEnabled && !resolvedConfig.chrome) {
+          resolvedConfig.chrome = true;
+        }
+        // Inject MCP server configs into extraArgs
+        const enabledMcpServers = integrations.mcpServers.filter((s) => s.enabled);
+        if (enabledMcpServers.length > 0) {
+          const existingExtraArgs = Array.isArray(resolvedConfig.extraArgs)
+            ? [...resolvedConfig.extraArgs]
+            : [];
+          for (const mcp of enabledMcpServers) {
+            const mcpArg = mcp.args.length > 0
+              ? `${mcp.command} ${mcp.args.join(" ")}`
+              : mcp.command;
+            existingExtraArgs.push("--mcp", JSON.stringify({ name: mcp.name, command: mcp.command, args: mcp.args }));
+          }
+          resolvedConfig.extraArgs = existingExtraArgs;
+        }
+        // Track API connection status
+        if (integrations.apiConnected) {
+          resolvedConfig.yantraApiConnected = true;
+        }
+      }
+    }
+
     const runtimeSkillEntries = await companySkills.listRuntimeSkillEntries(agent.companyId);
     const runtimeConfig = {
       ...resolvedConfig,
