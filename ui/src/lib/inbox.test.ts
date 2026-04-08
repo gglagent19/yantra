@@ -260,6 +260,10 @@ const dashboard: DashboardSummary = {
     monthSpendCents: 900,
     monthBudgetCents: 1000,
     monthUtilizationPercent: 90,
+    todayInputTokens: 0,
+    todayOutputTokens: 0,
+    todayCachedTokens: 0,
+    todayTotalTokens: 0,
   },
   pendingApprovals: 1,
   budgets: {

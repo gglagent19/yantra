@@ -18,7 +18,7 @@ function formatDay(dateStr: string): string {
 export function AdminPanel() {
   const { setBreadcrumbs } = useBreadcrumbs();
   const queryClient = useQueryClient();
-  const { addToast } = useToast();
+  const { pushToast } = useToast();
 
   useEffect(() => {
     setBreadcrumbs([{ label: "Admin Panel" }]);
@@ -39,18 +39,18 @@ export function AdminPanel() {
     mutationFn: (userId: string) => adminApi.promoteAdmin(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin"] });
-      addToast({ title: "User promoted to admin", variant: "default" });
+      pushToast({ title: "User promoted to admin", tone: "success" });
     },
-    onError: (err: Error) => addToast({ title: "Failed", description: err.message, variant: "destructive" }),
+    onError: (err: Error) => pushToast({ title: "Failed", body: err.message, tone: "error" }),
   });
 
   const demoteMutation = useMutation({
     mutationFn: (userId: string) => adminApi.demoteAdmin(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin"] });
-      addToast({ title: "Admin role removed", variant: "default" });
+      pushToast({ title: "Admin role removed", tone: "success" });
     },
-    onError: (err: Error) => addToast({ title: "Failed", description: err.message, variant: "destructive" }),
+    onError: (err: Error) => pushToast({ title: "Failed", body: err.message, tone: "error" }),
   });
 
   return (

@@ -39,7 +39,7 @@ const ANTHROPIC_SECRET_NAME = "ANTHROPIC_API_KEY";
 
 function AnthropicApiKeyCard({ companyId }: { companyId: string }) {
   const queryClient = useQueryClient();
-  const { addToast } = useToast();
+  const { pushToast } = useToast();
   const [keyValue, setKeyValue] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -62,10 +62,10 @@ function AnthropicApiKeyCard({ companyId }: { companyId: string }) {
       queryClient.invalidateQueries({ queryKey: queryKeys.secrets.list(companyId) });
       setKeyValue("");
       setIsEditing(false);
-      addToast({ title: "API key saved", variant: "default" });
+      pushToast({ title: "API key saved", tone: "success" });
     },
     onError: (err: Error) => {
-      addToast({ title: "Failed to save API key", description: err.message, variant: "destructive" });
+      pushToast({ title: "Failed to save API key", body: err.message, tone: "error" });
     },
   });
 
@@ -75,10 +75,10 @@ function AnthropicApiKeyCard({ companyId }: { companyId: string }) {
       queryClient.invalidateQueries({ queryKey: queryKeys.secrets.list(companyId) });
       setKeyValue("");
       setIsEditing(false);
-      addToast({ title: "API key updated", variant: "default" });
+      pushToast({ title: "API key updated", tone: "success" });
     },
     onError: (err: Error) => {
-      addToast({ title: "Failed to update API key", description: err.message, variant: "destructive" });
+      pushToast({ title: "Failed to update API key", body: err.message, tone: "error" });
     },
   });
 
