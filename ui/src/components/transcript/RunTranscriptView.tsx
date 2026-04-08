@@ -8,6 +8,7 @@ import {
   ChevronRight,
   CircleAlert,
   GitCompare,
+  Sparkles,
   TerminalSquare,
   User,
   Wrench,
@@ -121,6 +122,11 @@ type TranscriptBlock =
         changeType: "add" | "remove" | "context" | "hunk" | "file_header" | "truncation";
         text: string;
       }>;
+    }
+  | {
+      type: "skill_activated";
+      ts: string;
+      skills: Array<{ name: string; description: string | null }>;
     };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -311,6 +317,14 @@ function parseSystemActivity(text: string): { activityId?: string; name: string;
     name: humanizeLabel(match[2] ?? "Activity"),
     activityId: match[3] || undefined,
   };
+}
+
+function parseSkillActivation(text: string): Array<{ name: string; description: string | null }> | null {
+  const match = text.match(/^(?:\[yantra:skills\]\s*)?Using skills:\s*(.+)$/i);
+  if (!match) return null;
+  const names = match[1]!.split(",").map((s) => s.trim()).filter(Boolean);
+  if (names.length === 0) return null;
+  return names.map((name) => ({ name, description: null }));
 }
 
 function shouldHideNiceModeStderr(text: string): boolean {
@@ -536,8 +550,26 @@ export function normalizeTranscript(entries: TranscriptEntry[], streaming: boole
       continue;
     }
 
+    if (entry.kind === "skill_activated") {
+      blocks.push({
+        type: "skill_activated",
+        ts: entry.ts,
+        skills: entry.skills,
+      });
+      continue;
+    }
+
     if (entry.kind === "system") {
       if (compactWhitespace(entry.text).toLowerCase() === "turn started") {
+        continue;
+      }
+      const skillActivation = parseSkillActivation(entry.text.trim());
+      if (skillActivation) {
+        blocks.push({
+          type: "skill_activated",
+          ts: entry.ts,
+          skills: skillActivation,
+        });
         continue;
       }
       const activity = parseSystemActivity(entry.text);
@@ -1082,6 +1114,43 @@ function TranscriptActivityRow({
   );
 }
 
+function TranscriptSkillActivatedRow({
+  block,
+  density,
+}: {
+  block: Extract<TranscriptBlock, { type: "skill_activated" }>;
+  density: TranscriptDensity;
+}) {
+  const compact = density === "compact";
+  return (
+    <div className="rounded-xl border border-violet-500/20 bg-violet-500/[0.06] p-2.5">
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+        <span className={cn(
+          "font-semibold uppercase tracking-[0.1em] text-violet-600 dark:text-violet-400",
+          compact ? "text-[10px]" : "text-[11px]",
+        )}>
+          Skills
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {block.skills.map((skill, i) => (
+          <span
+            key={i}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md border border-violet-500/25 bg-violet-500/10 px-2 py-0.5 font-medium text-violet-700 dark:text-violet-300",
+              compact ? "text-[10px]" : "text-[11px]",
+            )}
+            title={skill.description ?? undefined}
+          >
+            {skill.name}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TranscriptEventRow({
   block,
   density,
@@ -1377,7 +1446,9 @@ function RawTranscriptView({
                   ? `${entry.text}\n${formatTokens(entry.inputTokens)} / ${formatTokens(entry.outputTokens)} / $${entry.costUsd.toFixed(6)}`
                   : entry.kind === "init"
                     ? `model=${entry.model}${entry.sessionId ? ` session=${entry.sessionId}` : ""}`
-                    : entry.text}
+                    : entry.kind === "skill_activated"
+                      ? `Using skills: ${entry.skills.map((s) => s.name).join(", ")}`
+                      : entry.text}
           </pre>
         </div>
       ))}
@@ -1438,6 +1509,7 @@ export function RunTranscriptView({
           )}
           {block.type === "activity" && <TranscriptActivityRow block={block} density={density} />}
           {block.type === "event" && <TranscriptEventRow block={block} density={density} />}
+          {block.type === "skill_activated" && <TranscriptSkillActivatedRow block={block} density={density} />}
         </div>
       ))}
     </div>

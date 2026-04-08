@@ -7,7 +7,7 @@ import { issuesApi } from "../api/issues";
 import type { TranscriptEntry } from "../adapters";
 import { queryKeys } from "../lib/queryKeys";
 import { cn, relativeTime } from "../lib/utils";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Sparkles } from "lucide-react";
 import { Identity } from "./Identity";
 import { RunTranscriptView } from "./transcript/RunTranscriptView";
 import { useLiveRunTranscripts } from "./transcript/useLiveRunTranscripts";
@@ -122,6 +122,21 @@ function AgentRunCard({
             <ExternalLink className="h-2.5 w-2.5" />
           </Link>
         </div>
+
+        {run.activeSkills && run.activeSkills.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            <Sparkles className="h-3 w-3 shrink-0 text-violet-500" />
+            {run.activeSkills.map((skill, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center rounded-md border border-violet-500/25 bg-violet-500/10 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 dark:text-violet-300"
+                title={skill.description ?? undefined}
+              >
+                {skill.name}
+              </span>
+            ))}
+          </div>
+        )}
 
         {run.issueId && (
           <div className="mt-3 rounded-lg border border-border/60 bg-background/60 px-2.5 py-2 text-xs">

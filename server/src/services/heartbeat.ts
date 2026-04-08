@@ -62,6 +62,7 @@ import {
   resolveSessionCompactionPolicy,
   type SessionCompactionPolicy,
 } from "@yantra/adapter-utils";
+import { readYantraSkillSyncPreference } from "@yantra/adapter-utils/server-utils";
 
 const MAX_LIVE_LOG_CHUNK_BYTES = 8 * 1024;
 const HEARTBEAT_MAX_CONCURRENT_RUNS_DEFAULT = 1;
@@ -2890,6 +2891,52 @@ export function heartbeatService(db: Db) {
           payload: meta as unknown as Record<string, unknown>,
         });
       };
+
+      // --- Resolve and emit active skills for this agent ---
+      try {
+        const allSkills = await companySkills.listFull(agent.companyId);
+        const agentConfig = (agent.adapterConfig ?? {}) as Record<string, unknown>;
+        const preference = readYantraSkillSyncPreference(agentConfig);
+        if (preference.explicit && preference.desiredSkills.length > 0) {
+          const activeSkillEntries = allSkills.filter((skill) =>
+            preference.desiredSkills.some((ref) => {
+              const normalizedRef = ref.trim().toLowerCase();
+              return (
+                skill.key.toLowerCase() === normalizedRef ||
+                skill.slug.toLowerCase() === normalizedRef ||
+                skill.name.toLowerCase() === normalizedRef
+              );
+            }),
+          );
+          if (activeSkillEntries.length > 0) {
+            const skillPayload = activeSkillEntries.map((s) => ({
+              key: s.key,
+              name: s.name,
+              description: s.description,
+            }));
+            await appendRunEvent(currentRun, seq++, {
+              eventType: "skills.activated",
+              stream: "system",
+              level: "info",
+              message: `Using skills: ${activeSkillEntries.map((s) => s.name).join(", ")}`,
+              payload: { skills: skillPayload },
+            });
+            context.yantraActiveSkills = skillPayload;
+            await db
+              .update(heartbeatRuns)
+              .set({
+                contextSnapshot: context,
+                updatedAt: new Date(),
+              })
+              .where(eq(heartbeatRuns.id, run.id));
+          }
+        }
+      } catch (err) {
+        logger.warn(
+          { companyId: agent.companyId, agentId: agent.id, runId: run.id, err },
+          "failed to resolve active skills for run",
+        );
+      }
 
       const adapter = getServerAdapter(agent.adapterType);
       const authToken = adapter.supportsLocalAgentJwt

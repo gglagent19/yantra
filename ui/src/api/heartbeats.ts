@@ -12,6 +12,12 @@ export interface ActiveRunForIssue extends HeartbeatRun {
   adapterType: string;
 }
 
+export interface ActiveSkillInfo {
+  key: string;
+  name: string;
+  description: string | null;
+}
+
 export interface LiveRunForIssue {
   id: string;
   status: string;
@@ -24,6 +30,7 @@ export interface LiveRunForIssue {
   agentName: string;
   adapterType: string;
   issueId?: string | null;
+  activeSkills?: ActiveSkillInfo[] | null;
 }
 
 export const heartbeatsApi = {
