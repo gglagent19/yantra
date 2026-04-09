@@ -115,18 +115,24 @@ export function Integrations() {
   const [newMcpCommand, setNewMcpCommand] = useState("");
   const [newMcpArgs, setNewMcpArgs] = useState("");
 
-  const handleLaunchBrowser = useCallback(() => {
-    setBrowserOpen(true);
-    // Open a real Chrome window that agents will control via the Claude-in-Chrome extension.
-    // The --chrome flag on Claude CLI connects to the user's running Chrome instance through
-    // the Claude-in-Chrome MCP extension. We open a real browser tab so agents have a window
-    // to navigate and control.
-    const w = window.open("https://www.google.com", "yantra-browser", "width=1280,height=800,menubar=no,toolbar=yes,location=yes,status=yes");
-    if (!w) {
-      pushToast({ title: "Pop-up blocked", body: "Allow pop-ups for this site and try again.", tone: "error" });
-      return;
+  const handleLaunchBrowser = useCallback(async () => {
+    try {
+      const base = localStorage.getItem("yantra.serverUrl") || "";
+      const res = await fetch(`${base}/api/browser/launch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ url: "https://www.google.com" }),
+      });
+      if (!res.ok) throw new Error("Server failed to launch browser");
+      setBrowserOpen(true);
+      pushToast({ title: "Chrome launched", body: "Agents will control Chrome via the Claude-in-Chrome extension.", tone: "success" });
+    } catch {
+      // Fallback: try opening in current browser
+      window.open("https://www.google.com", "_blank");
+      setBrowserOpen(true);
+      pushToast({ title: "Browser opened", body: "For agent control, ensure Chrome has the Claude-in-Chrome extension.", tone: "success" });
     }
-    pushToast({ title: "Browser launched", body: "Agents will control this Chrome window via the Claude-in-Chrome extension.", tone: "success" });
   }, [pushToast]);
 
   const colorMap: Record<string, string> = {
