@@ -9,7 +9,7 @@ export function browserRoutes() {
 
     try {
       if (process.platform === "win32") {
-        exec(`start chrome "${url}"`);
+        exec(`start "" "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" "${url}"`);
       } else if (process.platform === "darwin") {
         exec(`open -a "Google Chrome" "${url}"`);
       } else {
