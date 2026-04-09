@@ -117,21 +117,16 @@ export function Integrations() {
 
   const handleLaunchBrowser = useCallback(() => {
     setBrowserOpen(true);
-    // Open a new Chrome window the user can watch
-    const w = window.open("about:blank", "yantra-browser", "width=1280,height=800,menubar=no,toolbar=yes,location=yes,status=yes");
-    if (w) {
-      w.document.title = "Yantra Browser - Agent Automation";
-      w.document.body.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui;background:#0a0a0a;color:#fff;flex-direction:column;gap:16px">
-          <div style="width:48px;height:48px;border:3px solid #3b82f6;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite"></div>
-          <h2 style="margin:0;font-size:20px">Yantra Browser Ready</h2>
-          <p style="margin:0;color:#888;font-size:14px">This window will show browser automations when agents run tasks with Chrome enabled.</p>
-          <p style="margin:0;color:#666;font-size:12px">Agents will control this browser to navigate, click, and extract data.</p>
-          <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-        </div>
-      `;
+    // Open a real Chrome window that agents will control via the Claude-in-Chrome extension.
+    // The --chrome flag on Claude CLI connects to the user's running Chrome instance through
+    // the Claude-in-Chrome MCP extension. We open a real browser tab so agents have a window
+    // to navigate and control.
+    const w = window.open("https://www.google.com", "yantra-browser", "width=1280,height=800,menubar=no,toolbar=yes,location=yes,status=yes");
+    if (!w) {
+      pushToast({ title: "Pop-up blocked", body: "Allow pop-ups for this site and try again.", tone: "error" });
+      return;
     }
-    pushToast({ title: "Browser window opened", tone: "success" });
+    pushToast({ title: "Browser launched", body: "Agents will control this Chrome window via the Claude-in-Chrome extension.", tone: "success" });
   }, [pushToast]);
 
   const colorMap: Record<string, string> = {
@@ -201,7 +196,7 @@ export function Integrations() {
                 <ExternalLink className="h-3 w-3 ml-auto" />
               </Button>
               <p className="text-[10px] text-muted-foreground mt-2 text-center">
-                Opens a browser window where you can watch agent automations live
+                Opens a Chrome window that agents control via the Claude-in-Chrome extension
               </p>
             </div>
           )}
