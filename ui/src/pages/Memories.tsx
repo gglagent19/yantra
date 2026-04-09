@@ -25,8 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Brain, Plus, Search, Pencil, Trash2 } from "lucide-react";
-import { MEMORY_CATEGORIES, type MemoryCategory } from "@yantra/shared/constants";
-import type { Memory } from "@yantra/shared";
+import { MEMORY_CATEGORIES, type Memory, type MemoryCategory } from "@yantra/shared";
 
 const CATEGORY_COLORS: Record<MemoryCategory, string> = {
   general: "bg-gray-100 text-gray-700",
@@ -207,7 +206,7 @@ export function Memories() {
                     </p>
                     {memory.tags && (
                       <div className="flex gap-1 mt-2">
-                        {memory.tags.split(",").map((tag) => (
+                        {memory.tags.split(",").map((tag: string) => (
                           <Badge key={tag.trim()} variant="outline" className="text-xs">
                             {tag.trim()}
                           </Badge>
