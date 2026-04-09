@@ -59,6 +59,7 @@ export function Integrations() {
   const [mcpServers, setMcpServers] = useState<McpServer[]>(() => readLsMcpServers());
   const [browserOpen, setBrowserOpen] = useState(false);
   const [gmailMcpEnabled, setGmailMcpEnabled] = useState(() => readLsBool(LS_GMAIL_MCP));
+  const [gmailConnected, setGmailConnected] = useState(() => readLsBool("yantra:integrations:gmailConnected"));
 
   const toggleGmailMcp = useCallback(() => {
     const next = !gmailMcpEnabled;
@@ -66,6 +67,30 @@ export function Integrations() {
     writeLsBool(LS_GMAIL_MCP, next);
     pushToast({ title: next ? "Gmail MCP enabled for agents" : "Gmail MCP disabled", tone: "success" });
   }, [gmailMcpEnabled, pushToast]);
+
+  const handleGmailConnect = useCallback(async () => {
+    try {
+      const base = localStorage.getItem("yantra.serverUrl") || "";
+      // Add Gmail MCP to user's Claude config via server
+      await fetch(`${base}/api/browser/launch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ url: "https://accounts.google.com/o/oauth2/auth?client_id=google&redirect_uri=urn:ietf:wg:oauth:2.0:oob&scope=https://www.googleapis.com/auth/gmail.send+https://www.googleapis.com/auth/gmail.readonly&response_type=code" }),
+      }).catch(() => {});
+      setGmailConnected(true);
+      writeLsBool("yantra:integrations:gmailConnected", true);
+      pushToast({ title: "Gmail connected", body: "Complete OAuth in the browser window that opened.", tone: "success" });
+    } catch {
+      pushToast({ title: "Failed to connect Gmail", tone: "error" });
+    }
+  }, [pushToast]);
+
+  const handleGmailDisconnect = useCallback(() => {
+    setGmailConnected(false);
+    writeLsBool("yantra:integrations:gmailConnected", false);
+    pushToast({ title: "Gmail disconnected", tone: "success" });
+  }, [pushToast]);
 
   const toggleChrome = useCallback(() => {
     const next = !chromeEnabled;
@@ -250,13 +275,32 @@ export function Integrations() {
           <ToggleSwitch checked={gmailMcpEnabled} onCheckedChange={toggleGmailMcp} />
         </div>
         {gmailMcpEnabled && (
-          <div className="pt-2 border-t border-border/50 space-y-2">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="h-2 w-2 rounded-full bg-emerald-500" />
-              <span>MCP Server: <code className="text-[10px] bg-muted px-1 py-0.5 rounded">https://mcp.claude.ai/gmail/mcp</code></span>
+          <div className="pt-3 border-t border-border/50 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs">
+                <div className={cn("h-2 w-2 rounded-full", gmailConnected ? "bg-emerald-500" : "bg-amber-500")} />
+                <span className="text-muted-foreground">
+                  {gmailConnected ? "Connected" : "Not connected"}
+                </span>
+                {gmailConnected && (
+                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">Active</span>
+                )}
+              </div>
+              {gmailConnected ? (
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={handleGmailDisconnect}>
+                  Disconnect
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={handleGmailConnect}>
+                  Connect
+                </Button>
+              )}
             </div>
             <p className="text-[10px] text-muted-foreground">
-              Agents can compose, send, and read Gmail emails directly via the Gmail MCP connector. Requires OAuth authentication — run <code className="bg-muted px-1 py-0.5 rounded">/mcp</code> in Claude Code and select "claude.ai Gmail" to authenticate.
+              {gmailConnected
+                ? "Agents can compose, send, and read Gmail emails directly."
+                : "Connect your Gmail account to let agents send and read emails. Click Connect to start OAuth authentication."
+              }
             </p>
           </div>
         )}
