@@ -138,6 +138,17 @@ export type IssueOriginKind = (typeof ISSUE_ORIGIN_KINDS)[number];
 export const ISSUE_RELATION_TYPES = ["blocks"] as const;
 export type IssueRelationType = (typeof ISSUE_RELATION_TYPES)[number];
 
+export const MEMORY_CATEGORIES = [
+  "general",
+  "workflow",
+  "architecture",
+  "process",
+  "decision",
+  "preference",
+  "context",
+] as const;
+export type MemoryCategory = (typeof MEMORY_CATEGORIES)[number];
+
 export const GOAL_LEVELS = ["company", "team", "agent", "task"] as const;
 export type GoalLevel = (typeof GOAL_LEVELS)[number];
 
@@ -522,6 +533,7 @@ export const PLUGIN_RESERVED_COMPANY_ROUTE_SEGMENTS = [
   "projects",
   "issues",
   "goals",
+  "memories",
   "approvals",
   "costs",
   "activity",

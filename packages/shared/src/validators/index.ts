@@ -184,6 +184,13 @@ export {
 } from "./goal.js";
 
 export {
+  createMemorySchema,
+  updateMemorySchema,
+  type CreateMemory,
+  type UpdateMemory,
+} from "./memory.js";
+
+export {
   createApprovalSchema,
   resolveApprovalSchema,
   requestApprovalRevisionSchema,

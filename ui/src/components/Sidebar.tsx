@@ -14,6 +14,7 @@ import {
   Repeat,
   Settings,
   ShieldCheck,
+  Brain,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { SidebarSection } from "./SidebarSection";
@@ -120,6 +121,7 @@ export function Sidebar() {
           <SidebarNavItem to="/goals" label="Goals" icon={Target} />
           <SidebarNavItem to="/agents" label="Agents" icon={Bot} />
           <SidebarNavItem to="/org" label="Org" icon={Network} />
+          <SidebarNavItem to="/memories" label="Memory" icon={Brain} />
         </SidebarSection>
 
         <SidebarProjects />
