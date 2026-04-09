@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Chrome, ExternalLink, Globe, Key, Monitor, Plus, Plug, Server, Trash2, Zap, Cable } from "lucide-react";
+import { Chrome, ExternalLink, Globe, Key, Mail, Monitor, Plus, Plug, Server, Trash2, Zap, Cable } from "lucide-react";
 import { secretsApi } from "@/api/secrets";
 import { useCompany } from "../context/CompanyContext";
 import { useToast } from "../context/ToastContext";
@@ -14,6 +14,7 @@ import { cn } from "../lib/utils";
 const LS_CHROME_ENABLED = "yantra:integrations:chromeEnabled";
 const LS_API_MODE = "yantra:integrations:apiMode";
 const LS_MCP_SERVERS = "yantra:integrations:mcpServers";
+const LS_GMAIL_MCP = "yantra:integrations:gmailMcpEnabled";
 
 type McpServer = { name: string; command: string; args: string[]; enabled: boolean };
 
@@ -57,6 +58,14 @@ export function Integrations() {
   const [apiMode, setApiMode] = useState(() => readLsBool(LS_API_MODE));
   const [mcpServers, setMcpServers] = useState<McpServer[]>(() => readLsMcpServers());
   const [browserOpen, setBrowserOpen] = useState(false);
+  const [gmailMcpEnabled, setGmailMcpEnabled] = useState(() => readLsBool(LS_GMAIL_MCP));
+
+  const toggleGmailMcp = useCallback(() => {
+    const next = !gmailMcpEnabled;
+    setGmailMcpEnabled(next);
+    writeLsBool(LS_GMAIL_MCP, next);
+    pushToast({ title: next ? "Gmail MCP enabled for agents" : "Gmail MCP disabled", tone: "success" });
+  }, [gmailMcpEnabled, pushToast]);
 
   const toggleChrome = useCallback(() => {
     const next = !chromeEnabled;
@@ -223,6 +232,35 @@ export function Integrations() {
           </div>
         </div>
       </div>
+
+      {/* Gmail MCP */}
+      <section className={cn("rounded-xl border bg-card p-5 space-y-3 transition-colors", gmailMcpEnabled ? "border-red-500/30 bg-red-500/[0.02]" : "border-border")}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", gmailMcpEnabled ? "bg-red-500/15" : "bg-muted")}>
+              <Mail className={cn("h-5 w-5", gmailMcpEnabled ? "text-red-500" : "text-muted-foreground")} />
+            </div>
+            <div>
+              <div className="text-sm font-semibold">Gmail</div>
+              <div className="text-[11px] text-muted-foreground">
+                {gmailMcpEnabled ? "Agents can send & read emails via Gmail API" : "Enable Gmail for agents"}
+              </div>
+            </div>
+          </div>
+          <ToggleSwitch checked={gmailMcpEnabled} onCheckedChange={toggleGmailMcp} />
+        </div>
+        {gmailMcpEnabled && (
+          <div className="pt-2 border-t border-border/50 space-y-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="h-2 w-2 rounded-full bg-emerald-500" />
+              <span>MCP Server: <code className="text-[10px] bg-muted px-1 py-0.5 rounded">https://mcp.claude.ai/gmail/mcp</code></span>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Agents can compose, send, and read Gmail emails directly via the Gmail MCP connector. Requires OAuth authentication — run <code className="bg-muted px-1 py-0.5 rounded">/mcp</code> in Claude Code and select "claude.ai Gmail" to authenticate.
+            </p>
+          </div>
+        )}
+      </section>
 
       {/* API Connections */}
       <section className="rounded-xl border border-border bg-card p-5 space-y-4">
