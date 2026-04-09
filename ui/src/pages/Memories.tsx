@@ -142,9 +142,16 @@ export function Memories() {
 
   return (
     <div className="space-y-4">
-      {error && <p className="text-sm text-destructive">{error.message}</p>}
+      {(error || (!memories && !isLoading)) && (
+        <EmptyState
+          icon={Brain}
+          message="No memories yet. Add organizational knowledge that agents can reuse."
+          action="Add Memory"
+          onAction={openCreate}
+        />
+      )}
 
-      {memories && memories.length === 0 && (
+      {memories && memories.length === 0 && !error && (
         <EmptyState
           icon={Brain}
           message="No memories yet. Add organizational knowledge that agents can reuse."
