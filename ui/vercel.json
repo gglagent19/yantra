@@ -1,6 +1,5 @@
 {
-  "installCommand": "cd .. && pnpm install",
-  "buildCommand": "cd .. && pnpm --filter @yantra/ui build",
+  "buildCommand": null,
   "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
