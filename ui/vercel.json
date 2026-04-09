@@ -1,6 +1,6 @@
 {
   "installCommand": "echo skip",
-  "buildCommand": null,
+  "buildCommand": "echo skip",
   "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
