@@ -68,22 +68,17 @@ export function Integrations() {
     pushToast({ title: next ? "Gmail MCP enabled for agents" : "Gmail MCP disabled", tone: "success" });
   }, [gmailMcpEnabled, pushToast]);
 
-  const handleGmailConnect = useCallback(async () => {
-    try {
-      const base = localStorage.getItem("yantra.serverUrl") || "";
-      // Add Gmail MCP to user's Claude config via server
-      await fetch(`${base}/api/browser/launch`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ url: "https://accounts.google.com/o/oauth2/auth?client_id=google&redirect_uri=urn:ietf:wg:oauth:2.0:oob&scope=https://www.googleapis.com/auth/gmail.send+https://www.googleapis.com/auth/gmail.readonly&response_type=code" }),
-      }).catch(() => {});
-      setGmailConnected(true);
-      writeLsBool("yantra:integrations:gmailConnected", true);
-      pushToast({ title: "Gmail connected", body: "Complete OAuth in the browser window that opened.", tone: "success" });
-    } catch {
-      pushToast({ title: "Failed to connect Gmail", tone: "error" });
-    }
+  const [gmailSetupVisible, setGmailSetupVisible] = useState(false);
+
+  const handleGmailConnect = useCallback(() => {
+    setGmailSetupVisible(true);
+  }, []);
+
+  const handleGmailMarkConnected = useCallback(() => {
+    setGmailConnected(true);
+    writeLsBool("yantra:integrations:gmailConnected", true);
+    setGmailSetupVisible(false);
+    pushToast({ title: "Gmail connected", tone: "success" });
   }, [pushToast]);
 
   const handleGmailDisconnect = useCallback(() => {
@@ -296,12 +291,35 @@ export function Integrations() {
                 </Button>
               )}
             </div>
-            <p className="text-[10px] text-muted-foreground">
-              {gmailConnected
-                ? "Agents can compose, send, and read Gmail emails directly."
-                : "Connect your Gmail account to let agents send and read emails. Click Connect to start OAuth authentication."
-              }
-            </p>
+            {gmailConnected && (
+              <p className="text-[10px] text-muted-foreground">
+                Agents can compose, send, and read Gmail emails directly.
+              </p>
+            )}
+            {!gmailConnected && !gmailSetupVisible && (
+              <p className="text-[10px] text-muted-foreground">
+                Connect your Gmail account to let agents send and read emails.
+              </p>
+            )}
+            {gmailSetupVisible && !gmailConnected && (
+              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
+                <p className="text-xs font-medium">Setup Steps:</p>
+                <ol className="text-[11px] text-muted-foreground space-y-1.5 list-decimal list-inside">
+                  <li>Open a terminal and run: <code className="bg-background px-1.5 py-0.5 rounded border text-[10px]">claude mcp add --transport http gmail https://mcp.claude.ai/gmail/mcp --scope user</code></li>
+                  <li>Then run: <code className="bg-background px-1.5 py-0.5 rounded border text-[10px]">/mcp</code> and select <strong>"claude.ai Gmail"</strong> to authenticate</li>
+                  <li>Sign in with your Google account in the browser</li>
+                  <li>Come back here and click <strong>"Mark as Connected"</strong></li>
+                </ol>
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" onClick={handleGmailMarkConnected}>
+                    Mark as Connected
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setGmailSetupVisible(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>
